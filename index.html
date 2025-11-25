@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cotizador HeyNow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="brand-pill">HeyNow</p>
+          <h1>Cotizador rapido</h1>
+          <p>
+            Arma propuestas visuales y consistentes en minutos. Ajusta horas, margenes y paquetes sin perder claridad.
+          </p>
+        </div>
+        <div class="actions">
+          <button id="reset-btn" class="btn ghost">Limpiar</button>
+          <button id="export-json-btn" class="btn ghost">Descargar JSON</button>
+          <button id="print-btn" class="btn primary">Imprimir / PDF</button>
+        </div>
+      </header>
+
+      <div class="quote-layout">
+        <div class="stack">
+          <section class="card" aria-labelledby="implementacion-label">
+            <h2 id="implementacion-label">Implementacion base</h2>
+            <p class="state-info">Selecciona el punto de partida del proyecto.</p>
+            <div class="card-grid">
+              <div>
+                <label for="implementation">Opcion</label>
+                <select id="implementation"></select>
+              </div>
+              <div class="info-pill" id="implementation-info">
+                <p id="implementation-info-name">Selecciona una opcion para ver detalles.</p>
+                <p><strong>Precio:</strong> <span id="implementation-info-cost">$0</span></p>
+                <p><strong>Horas:</strong> <span id="implementation-info-hours">0 h</span></p>
+                <p><strong>Valor hora:</strong> <span id="implementation-info-rate">-</span></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="integraciones-label">
+            <h2 id="integraciones-label">Integraciones catalogo</h2>
+            <p class="state-info">Casos de uso con automatizacion conectada.</p>
+            <div class="card-grid">
+              <div>
+                <label for="integrations">Casos automatizados</label>
+                <select id="integrations"></select>
+                <div class="toggle-row" style="margin-top: 12px">
+                  <span class="state-info" id="integration-rate-label">Costo sin IA</span>
+                  <label class="switch">
+                    <input type="checkbox" id="integration-rate-toggle" />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="info-pill" id="integrations-info">
+                <p id="integrations-info-label">Selecciona una opcion.</p>
+                <p><strong>Precio:</strong> <span id="integration-info-cost">$0</span></p>
+                <p><strong>Horas:</strong> <span id="integration-info-hours">0 h</span></p>
+                <p><strong>Valor hora:</strong> <span id="integration-info-rate">-</span></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="costos-mensuales-label">
+            <h2 id="costos-mensuales-label">Costo mensual</h2>
+            <div class="monthly-grid">
+              <div class="monthly-block">
+                <h3>Paquetes de sesiones</h3>
+                <label for="session-model">Modelo IA</label>
+                <select id="session-model"></select>
+                <p class="state-info" id="session-model-info"></p>
+
+                <label for="session-package">Paquete de sesiones</label>
+                <select id="session-package"></select>
+                <p class="state-info" id="session-package-info"></p>
+              </div>
+              <div class="monthly-block">
+                <h3>Licenciamiento Hey BI</h3>
+                <p class="state-info">
+                  Selecciona el paquete de BI segun el volumen de sesiones que requiera el cliente.
+                </p>
+                <label for="heybi-plan">Paquete Hey BI</label>
+                <select id="heybi-plan"></select>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="partner-label">
+            <h2 id="partner-label">Partner / margen</h2>
+            <p class="state-info">Define el perfil que determina el markup final.</p>
+            <label for="partner">Perfil</label>
+            <select id="partner"></select>
+          </section>
+
+          <section class="card" aria-labelledby="custom-integration-label">
+            <h2 id="custom-integration-label">Integracion personalizada</h2>
+            <p class="state-info">Crea multiples automatismos manuales y ajusta sus tarifas.</p>
+            <div class="custom-integrations">
+              <div class="custom-integrations-header">
+                <button type="button" class="btn ghost small" id="add-custom-integration">Agregar integracion</button>
+              </div>
+              <div id="custom-integrations-list" class="custom-list"></div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="manual-block-label">
+            <h2 id="manual-block-label">Edicion manual & calculo por horas</h2>
+            <div class="toggle-row">
+              <label>
+                <input type="checkbox" id="manual-toggle" />
+                Activar edicion manual
+              </label>
+            </div>
+            <div class="manual-grid">
+              <div>
+                <label for="manual-hours">Horas totales</label>
+                <input type="number" id="manual-hours" min="0" step="1" placeholder="Auto" />
+                <p class="state-info">Tarifa actual: <span id="hourly-rate-info">-</span></p>
+              </div>
+              <div>
+                <span class="label">Tipo de horas</span>
+                <div class="options" style="flex-direction: row; gap: 10px">
+                  <label><input type="radio" name="hourType" value="sinIa" checked />Sin IA</label>
+                  <label><input type="radio" name="hourType" value="ia" />IA</label>
+                  <label><input type="radio" name="hourType" value="custom" />Personalizado</label>
+                </div>
+                <input
+                  type="number"
+                  id="custom-rate"
+                  min="0"
+                  step="5"
+                  placeholder="Valor por hora personalizado"
+                  style="margin-top: 6px; display: none"
+                />
+                <p id="custom-rate-error" class="state-info" style="color: #ff4d4d; display: none"></p>
+              </div>
+              <div>
+                <label>
+                  <input type="checkbox" id="auto-hourly" checked />
+                  Calcular setup usando tarifa/hora
+                </label>
+              </div>
+            </div>
+
+            <div class="manual-grid" style="margin-top: 12px">
+              <div>
+                <label for="setup-override">Setup lista (USD)</label>
+                <input type="number" id="setup-override" min="0" step="50" placeholder="Auto" disabled />
+              </div>
+              <div>
+                <label for="monthly-override">Mensual lista (USD)</label>
+                <input type="number" id="monthly-override" min="0" step="25" placeholder="Auto" />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="sidebar">
+          <section class="summary" aria-live="polite">
+            <h3>Resumen</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <dt>Setup lista</dt>
+                <dd id="setup-total">$0</dd>
+                <small id="setup-note"></small>
+              </div>
+              <div class="summary-item">
+                <dt>Mensual lista</dt>
+                <dd id="monthly-total">$0</dd>
+                <small>Con margen: <span id="monthly-margin">$0</span></small>
+              </div>
+              <div class="summary-item">
+                <dt>Horas</dt>
+                <dd id="hours-total">0 h</dd>
+                <small id="hours-breakdown">Sin IA 0h / IA 0h</small>
+              </div>
+            </div>
+
+            <div class="summary-breakdown">
+              <h4>Detalle de componentes</h4>
+              <ul id="breakdown"></ul>
+            </div>
+
+            <div class="summary-breakdown">
+              <h4>Horas por tarifa</h4>
+              <p class="state-info">
+                Sin IA (<span id="hour-rate-sin-ia">$0</span>): <strong id="hours-non-ia">0</strong> h
+              </p>
+              <p class="state-info">
+                IA (<span id="hour-rate-ia">$0</span>): <strong id="hours-ia">0</strong> h
+              </p>
+            </div>
+            <div class="summary-breakdown">
+              <p class="state-info">Setup final con margen: <strong id="setup-margin">$0</strong></p>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
