@@ -2,6 +2,7 @@ import { catalog, sessionPackages, heyBiPlans, sessionModels } from "../data/cat
 import { formatMoney, formatMoneyPrecise } from "./format.js";
 
 const rateByType = (type) => catalog.rates[type] ?? catalog.rates.sinIa;
+const componentKey = (type, id) => `${type}:${id ?? "default"}`;
 
 const buildCustomIntegrations = (state) =>
   (state.customIntegrations ?? [])
@@ -31,27 +32,36 @@ const buildCatalogIntegration = (state) => {
   const rate = rateByType(rateType);
   const hours = def.baseHours ?? 0;
   const cost = def.fixedCost ?? hours * rate;
+  const monthly = def.monthly ?? 0;
+  if ((cost === 0 && hours === 0 && monthly === 0) || def.id === "none") return null;
   return {
+    id: def.id,
     label: def.label,
     hours,
     cost,
     labor: rateType === "ia" ? "ia" : "sinIa",
     hourly: hours ? rate : null,
-    monthly: def.monthly ?? 0,
+    monthly,
   };
 };
 
 export function calculateTotals(state) {
-  const impl = catalog.implementations.find((item) => item.id === state.implementation) ?? {
-    cost: 0,
-    hours: 0,
-    labor: "sinIa",
-  };
+  const disabledComponents = state.disabledComponents instanceof Set ? state.disabledComponents : new Set();
+  const isDisabled = (type, id) => disabledComponents.has(componentKey(type, id));
+
+  const impl =
+    catalog.implementations.find((item) => item.id === state.implementation) ?? {
+      id: "implementation-default",
+      name: "Implementacion base",
+      cost: 0,
+      hours: 0,
+      labor: "sinIa",
+    };
   const implementationExtras = catalog.implementationExtras.filter((item) =>
     state.implementationExtras.has(item.id)
   );
   const addons = catalog.addons.filter((addon) => state.addons.has(addon.id));
-  const integration = buildCatalogIntegration(state);
+  let integration = buildCatalogIntegration(state);
   const sessionPackage =
     sessionPackages.find((pkg) => pkg.id === state.sessionPackage) ?? { cost: 0, extraCost: null, label: "" };
   const heyBiPlan = heyBiPlans.find((plan) => plan.id === state.heyBiPlan) ?? { cost: 0 };
@@ -60,25 +70,49 @@ export function calculateTotals(state) {
 
   let sinIaHours = 0;
   let iaHours = 0;
-  const trackHours = (item) => {
-    if (!item) return;
+  const trackHours = (item, disabled) => {
+    if (!item || disabled) return;
     const hours = item.hours ?? 0;
     if (item.labor === "ia") iaHours += hours;
     else sinIaHours += hours;
   };
-  trackHours(impl);
-  implementationExtras.forEach(trackHours);
-  addons.forEach(trackHours);
-  trackHours(integration);
-  customIntegrations.forEach(trackHours);
+  const implDisabled = isDisabled("implementation", impl.id);
+  trackHours(impl, implDisabled);
+  let setupBase = implDisabled ? 0 : impl.cost;
+  let monthlyBase = 0;
 
-  const setupBase =
-    impl.cost +
-    implementationExtras.reduce((sum, item) => sum + item.cost, 0) +
-    addons.reduce((sum, addon) => sum + addon.cost, 0) +
-    (integration?.cost ?? 0) +
-    customIntegrations.reduce((sum, item) => sum + item.cost, 0);
-  const monthlyBase = sessionPackage.cost + heyBiPlan.cost + (integration?.monthly ?? 0);
+  implementationExtras.forEach((item) => {
+    const disabled = isDisabled("implementationExtras", item.id);
+    trackHours(item, disabled);
+    if (!disabled) setupBase += item.cost;
+  });
+  addons.forEach((addon) => {
+    const disabled = isDisabled("addons", addon.id);
+    trackHours(addon, disabled);
+    if (!disabled) setupBase += addon.cost;
+  });
+
+  if (integration) {
+    const disabled = isDisabled("integration", integration.id);
+    trackHours(integration, disabled);
+    if (disabled) {
+      integration = { ...integration, disabled: true };
+    } else {
+      setupBase += integration.cost;
+      monthlyBase += integration.monthly ?? 0;
+    }
+  }
+
+  customIntegrations.forEach((item) => {
+    const disabled = isDisabled("customIntegrations", item.id);
+    trackHours(item, disabled);
+    if (!disabled) setupBase += item.cost;
+  });
+
+  const sessionPackageDisabled = isDisabled("sessionPackage");
+  const heyBiDisabled = isDisabled("heyBiPlan");
+  if (!sessionPackageDisabled) monthlyBase += sessionPackage.cost;
+  if (!heyBiDisabled) monthlyBase += heyBiPlan.cost;
 
   const manualActive = state.manualEnabled;
   const hasManualHours = manualActive && state.manualHours !== null;
@@ -122,6 +156,9 @@ export function calculateTotals(state) {
       hours: impl.hours,
       labor: impl.labor,
       hourly: impl.hours ? impl.cost / impl.hours : null,
+      removable: { type: "implementation", id: impl.id },
+      disabled: isDisabled("implementation", impl.id),
+      category: "setup",
     });
   implementationExtras.forEach((item) =>
     breakdown.push({
@@ -130,6 +167,9 @@ export function calculateTotals(state) {
       hours: item.hours,
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
+      removable: { type: "implementationExtras", id: item.id },
+      disabled: isDisabled("implementationExtras", item.id),
+      category: "setup",
     })
   );
   addons.forEach((item) =>
@@ -139,6 +179,9 @@ export function calculateTotals(state) {
       hours: item.hours,
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
+      removable: { type: "addons", id: item.id },
+      disabled: isDisabled("addons", item.id),
+      category: "setup",
     })
   );
   if (integration) {
@@ -149,7 +192,19 @@ export function calculateTotals(state) {
       labor: integration.labor,
       hourly: integration.hourly,
       note: integration.monthly ? `Mensual ${formatMoney(integration.monthly)}` : undefined,
+      removable: { type: "integration", id: integration.id },
+      disabled: Boolean(integration.disabled),
+      category: "setup",
     });
+    if ((integration.monthly ?? 0) > 0) {
+      breakdown.push({
+        label: `${integration.label} (mensual)`,
+        value: integration.monthly,
+        removable: { type: "integration", id: integration.id },
+        disabled: Boolean(integration.disabled),
+        category: "monthly",
+      });
+    }
   }
   customIntegrations.forEach((custom) =>
     breakdown.push({
@@ -159,10 +214,27 @@ export function calculateTotals(state) {
       labor: custom.labor,
       hourly: custom.rate,
       note: custom.override ? "Precio manual" : "Horas x tarifa",
+      removable: { type: "customIntegrations", id: custom.id },
+      disabled: isDisabled("customIntegrations", custom.id),
+      category: "setup",
     })
   );
-  if (sessionPackage.cost) breakdown.push({ label: sessionPackage.label, value: sessionPackage.cost });
-  if (heyBiPlan.cost) breakdown.push({ label: heyBiPlan.label, value: heyBiPlan.cost });
+  if (sessionPackage.cost)
+    breakdown.push({
+      label: sessionPackage.label,
+      value: sessionPackage.cost,
+      removable: { type: "sessionPackage" },
+      disabled: sessionPackageDisabled,
+      category: "monthly",
+    });
+  if (heyBiPlan.cost)
+    breakdown.push({
+      label: heyBiPlan.label,
+      value: heyBiPlan.cost,
+      removable: { type: "heyBiPlan" },
+      disabled: heyBiDisabled,
+      category: "monthly",
+    });
 
   return {
     finalSetupList,

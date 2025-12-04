@@ -14,8 +14,15 @@
   <body>
     <div class="app-shell">
       <header class="hero">
-        <div>
-          <p class="brand-pill">HeyNow</p>
+        <div class="hero-info">
+          <div class="hero-brand">
+            <img
+              src="/assets/images/heynow-negro-largo.avif"
+              alt="HeyNow IA"
+              class="hero-logo hero-logo-primary"
+              loading="lazy"
+            />
+          </div>
           <h1>Cotizador rapido</h1>
           <p>
             Arma propuestas visuales y consistentes en minutos. Ajusta horas, margenes y paquetes sin perder claridad.
@@ -33,16 +40,27 @@
           <section class="card" aria-labelledby="implementacion-label">
             <h2 id="implementacion-label">Implementacion base</h2>
             <p class="state-info">Selecciona el punto de partida del proyecto.</p>
+            <label for="implementation">Opcion</label>
+            <select id="implementation"></select>
+            <div class="info-pill" id="implementation-info">
+              <p id="implementation-info-name">Selecciona una opcion para ver detalles.</p>
+              <p><strong>Precio:</strong> <span id="implementation-info-cost">$0</span></p>
+              <p><strong>Horas:</strong> <span id="implementation-info-hours">0 h</span></p>
+              <p><strong>Valor hora:</strong> <span id="implementation-info-rate">-</span></p>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="extras-label">
+            <h2 id="extras-label">Automatismos y add-ons</h2>
+            <p class="state-info">Activa automatismos prearmados o add-ons IA segun el alcance.</p>
             <div class="card-grid">
               <div>
-                <label for="implementation">Opcion</label>
-                <select id="implementation"></select>
+                <label class="label" for="implementation-extras">Automatismos</label>
+                <div id="implementation-extras" class="options grid"></div>
               </div>
-              <div class="info-pill" id="implementation-info">
-                <p id="implementation-info-name">Selecciona una opcion para ver detalles.</p>
-                <p><strong>Precio:</strong> <span id="implementation-info-cost">$0</span></p>
-                <p><strong>Horas:</strong> <span id="implementation-info-hours">0 h</span></p>
-                <p><strong>Valor hora:</strong> <span id="implementation-info-rate">-</span></p>
+              <div>
+                <label class="label" for="addons">Add-ons IA</label>
+                <div id="addons" class="options grid"></div>
               </div>
             </div>
           </section>
@@ -50,24 +68,20 @@
           <section class="card" aria-labelledby="integraciones-label">
             <h2 id="integraciones-label">Integraciones catalogo</h2>
             <p class="state-info">Casos de uso con automatizacion conectada.</p>
-            <div class="card-grid">
-              <div>
-                <label for="integrations">Casos automatizados</label>
-                <select id="integrations"></select>
-                <div class="toggle-row" style="margin-top: 12px">
-                  <span class="state-info" id="integration-rate-label">Costo sin IA</span>
-                  <label class="switch">
-                    <input type="checkbox" id="integration-rate-toggle" />
-                    <span class="slider"></span>
-                  </label>
-                </div>
-              </div>
-              <div class="info-pill" id="integrations-info">
-                <p id="integrations-info-label">Selecciona una opcion.</p>
-                <p><strong>Precio:</strong> <span id="integration-info-cost">$0</span></p>
-                <p><strong>Horas:</strong> <span id="integration-info-hours">0 h</span></p>
-                <p><strong>Valor hora:</strong> <span id="integration-info-rate">-</span></p>
-              </div>
+            <label for="integrations">Casos automatizados</label>
+            <select id="integrations"></select>
+            <div class="toggle-row" style="margin-top: 12px">
+              <span class="state-info" id="integration-rate-label">Costo sin IA</span>
+              <label class="switch">
+                <input type="checkbox" id="integration-rate-toggle" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="info-pill" id="integrations-info">
+              <p id="integrations-info-label">Selecciona una opcion.</p>
+              <p><strong>Precio:</strong> <span id="integration-info-cost">$0</span></p>
+              <p><strong>Horas:</strong> <span id="integration-info-hours">0 h</span></p>
+              <p><strong>Valor hora:</strong> <span id="integration-info-rate">-</span></p>
             </div>
           </section>
 
@@ -106,10 +120,65 @@
             <h2 id="custom-integration-label">Integracion personalizada</h2>
             <p class="state-info">Crea multiples automatismos manuales y ajusta sus tarifas.</p>
             <div class="custom-integrations">
-              <div class="custom-integrations-header">
-                <button type="button" class="btn ghost small" id="add-custom-integration">Agregar integracion</button>
+              <form id="custom-integration-form" class="custom-form" novalidate>
+                <div class="manual-grid">
+                  <div>
+                    <label for="custom-integration-name">Nombre</label>
+                    <input type="text" id="custom-integration-name" placeholder="Nombre del automatismo" />
+                  </div>
+                  <div>
+                    <label for="custom-integration-hours">Horas</label>
+                    <input type="number" id="custom-integration-hours" min="0" step="1" placeholder="0" />
+                  </div>
+                  <div>
+                    <label for="custom-integration-labor">Clasificacion</label>
+                    <select id="custom-integration-labor">
+                      <option value="sinIa">Sin IA</option>
+                      <option value="ia">IA</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="custom-integration-rate">Valor hora</label>
+                    <input type="number" id="custom-integration-rate" min="0" step="5" placeholder="Auto" />
+                    <small class="state-info">Deja vacio para usar la tarifa segun clasificacion.</small>
+                  </div>
+                  <div>
+                    <label for="custom-integration-override">Precio manual (opcional)</label>
+                    <input type="number" id="custom-integration-override" min="0" step="50" placeholder="Auto" />
+                  </div>
+                </div>
+                <div class="custom-form-actions">
+                  <p id="custom-integration-error" class="form-error" aria-live="polite"></p>
+                  <button type="submit" class="btn ghost small" id="add-custom-integration">Agregar al resumen</button>
+                </div>
+              </form>
+              <div class="custom-form-preview">
+                <div class="custom-preview">
+                  <h3>Vista previa</h3>
+                  <div class="custom-preview-card">
+                    <p id="custom-preview-empty" class="state-info">Completa el formulario para ver detalles.</p>
+                    <div id="custom-preview-details" class="custom-preview-details" hidden>
+                      <p><span class="label-inline">Nombre</span><strong id="custom-preview-name">-</strong></p>
+                      <p>
+                        <span class="label-inline">Horas</span
+                        ><span id="custom-preview-hours" class="value-inline">0 h</span>
+                      </p>
+                      <p>
+                        <span class="label-inline">Clasificacion</span
+                        ><span id="custom-preview-labor" class="value-inline">Sin IA</span>
+                      </p>
+                      <p>
+                        <span class="label-inline">Valor hora</span
+                        ><span id="custom-preview-rate" class="value-inline">$0</span>
+                      </p>
+                      <p>
+                        <span class="label-inline">Precio estimado</span
+                        ><span id="custom-preview-total" class="value-inline">$0</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div id="custom-integrations-list" class="custom-list"></div>
             </div>
           </section>
 
@@ -168,45 +237,44 @@
         <aside class="sidebar">
           <section class="summary" aria-live="polite">
             <h3>Resumen</h3>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <dt>Setup lista</dt>
-                <dd id="setup-total">$0</dd>
-                <small id="setup-note"></small>
-              </div>
-              <div class="summary-item">
-                <dt>Mensual lista</dt>
-                <dd id="monthly-total">$0</dd>
-                <small>Con margen: <span id="monthly-margin">$0</span></small>
-              </div>
-              <div class="summary-item">
-                <dt>Horas</dt>
-                <dd id="hours-total">0 h</dd>
-                <small id="hours-breakdown">Sin IA 0h / IA 0h</small>
-              </div>
-            </div>
-
-            <div class="summary-breakdown">
+            <div class="summary-breakdown" id="breakdown-section">
               <h4>Detalle de componentes</h4>
-              <ul id="breakdown"></ul>
+              <div class="breakdown-group">
+                <h5>Setup</h5>
+                <ul id="breakdown-setup" class="breakdown-list"></ul>
+              </div>
+              <div class="breakdown-group">
+                <h5>Mensual</h5>
+                <ul id="breakdown-monthly" class="breakdown-list"></ul>
+              </div>
             </div>
 
-            <div class="summary-breakdown">
-              <h4>Horas por tarifa</h4>
-              <p class="state-info">
-                Sin IA (<span id="hour-rate-sin-ia">$0</span>): <strong id="hours-non-ia">0</strong> h
-              </p>
-              <p class="state-info">
-                IA (<span id="hour-rate-ia">$0</span>): <strong id="hours-ia">0</strong> h
-              </p>
+            <div class="summary-metrics">
+              <div class="metric-row">
+                <div class="metric-title">Setup lista</div>
+                <div class="metric-value" id="setup-total">$0</div>
+                <div class="metric-note">Con margen: <span id="setup-margin">$0</span></div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-title">Mensual lista</div>
+                <div class="metric-value" id="monthly-total">$0</div>
+                <div class="metric-note">Con margen: <span id="monthly-margin">$0</span></div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-title">Horas</div>
+                <div class="metric-value" id="hours-total">0 h</div>
+              </div>
             </div>
-            <div class="summary-breakdown">
-              <p class="state-info">Setup final con margen: <strong id="setup-margin">$0</strong></p>
+            <div class="summary-breakdown summary-large">
+              <h4>Tarifas aplicadas</h4>
+              <ul id="hourly-list" class="hourly-list"></ul>
             </div>
           </section>
         </aside>
       </div>
     </div>
+
+    <div id="proposal-preview" class="proposal-preview" aria-hidden="true"></div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

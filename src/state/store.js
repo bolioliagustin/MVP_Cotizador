@@ -18,6 +18,7 @@ export const defaultState = {
   setupOverride: null,
   monthlyOverride: null,
   customIntegrations: [],
+  disabledComponents: [],
 };
 
 export function createStore(initialState = defaultState) {
@@ -29,6 +30,7 @@ export function createStore(initialState = defaultState) {
     customIntegrations: Array.isArray(initialState.customIntegrations)
       ? initialState.customIntegrations.map((item) => ({ ...item }))
       : [],
+    disabledComponents: new Set(initialState.disabledComponents ?? []),
   };
 
   const getState = () => state;
@@ -38,6 +40,7 @@ export function createStore(initialState = defaultState) {
     if (!(state.addons instanceof Set)) state.addons = new Set(state.addons);
     if (!(state.implementationExtras instanceof Set))
       state.implementationExtras = new Set(state.implementationExtras);
+    if (!(state.disabledComponents instanceof Set)) state.disabledComponents = new Set(state.disabledComponents);
     listeners.forEach((listener) => listener(state));
   };
 
