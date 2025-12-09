@@ -1,0 +1,104 @@
+@use "variables" as *;
+
+/* Breakdown Value Edit */
+.breakdown-value-edit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.breakdown-price-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.breakdown-price-amount {
+    font-size: 1.1rem;
+}
+
+.breakdown-edit-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 120ms ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.breakdown-edit-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.breakdown-price-input-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.breakdown-price-input {
+    width: 90px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: right;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    transition: all 120ms ease;
+}
+
+.breakdown-price-input:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.breakdown-price-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 223, 0, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.breakdown-save-btn,
+.breakdown-cancel-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 120ms ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.breakdown-save-btn:hover {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.breakdown-cancel-btn:hover {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.original-price {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 400;
+}

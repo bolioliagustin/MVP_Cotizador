@@ -33,16 +33,6 @@ export function cacheRefs() {
     refs.heyBiSelect = qs("#heybi-plan");
     refs.partner = qs("#partner");
 
-    refs.manualToggle = qs("#manual-toggle");
-    refs.manualHours = qs("#manual-hours");
-    refs.hourlyRateInfo = qs("#hourly-rate-info");
-    refs.hourTypeRadios = document.querySelectorAll('input[name="hourType"]');
-    refs.customRate = qs("#custom-rate");
-    refs.customRateError = qs("#custom-rate-error");
-    refs.autoHourly = qs("#auto-hourly");
-    refs.setupOverride = qs("#setup-override");
-    refs.monthlyOverride = qs("#monthly-override");
-
     refs.customIntegrationForm = qs("#custom-integration-form");
     refs.customIntegrationName = qs("#custom-integration-name");
     refs.customIntegrationHours = qs("#custom-integration-hours");
@@ -141,13 +131,6 @@ export function hydrateForm(store) {
     refs.sessionModel.value = state.sessionModel;
     refs.sessionPackage.value = state.sessionPackage;
     refs.heyBiSelect.value = state.heyBiPlan;
-
-    refs.manualToggle.checked = state.manualEnabled;
-    refs.manualHours.value = state.manualHours ?? "";
-    refs.customRate.value = state.customRate ?? "";
-    refs.autoHourly.checked = state.autoSetup;
-    refs.setupOverride.value = state.setupOverride ?? "";
-    refs.monthlyOverride.value = state.monthlyOverride ?? "";
 
     renderSessionPackages(state.sessionModel, state.sessionPackage);
     renderImplementationInfo(state.implementation);
@@ -468,54 +451,25 @@ export function getHourlyEntries(totals, manualActive, state, customRateInvalid,
 
 export function render(state) {
     const totals = calculateTotals(state);
-    const manualActive = state.manualEnabled;
     const disabledSet = state.disabledComponents || new Set();
 
     renderImplementationInfo(state.implementation);
     renderIntegrationInfo(state.integrations, state.integrationRate);
     renderExtrasSummary();
 
-    const currentRate =
-        manualActive && state.hourType === "custom" && state.customRate
-            ? state.customRate
-            : catalog.rates[state.hourType] || catalog.rates.sinIa;
-    refs.hourlyRateInfo.textContent = formatMoney(currentRate);
-
     refs.setupTotal.textContent = formatMoney(totals.finalSetupList);
     refs.setupMargin.textContent = formatMoney(totals.setupMargin);
     refs.monthlyTotal.textContent = formatMoney(totals.finalMonthlyList);
     refs.monthlyMargin.textContent = formatMoney(totals.monthlyMargin);
     refs.hoursTotal.textContent = `${totals.manualHours.toFixed(0)} h`;
-    const setupNote =
-        manualActive && state.setupOverride !== null && !state.autoSetup
-            ? `Override manual - base ${formatMoney(totals.setupBase)}`
-            : manualActive && state.autoSetup
-                ? `Auto por horas - base ${formatMoney(totals.setupBase)}`
-                : "Desde catalogo";
-    refs.setupMargin.parentElement?.setAttribute("data-note", setupNote);
 
-    refs.manualHours.disabled = !manualActive;
-    refs.autoHourly.disabled = !manualActive;
-    refs.monthlyOverride.disabled = !manualActive;
-    refs.setupOverride.disabled = state.autoSetup || !manualActive;
-    refs.hourTypeRadios.forEach((radio) => (radio.disabled = !manualActive));
-    refs.customRate.disabled = !manualActive || state.hourType !== "custom";
-    refs.customRate.style.display = manualActive && state.hourType === "custom" ? "block" : "none";
-
-    const customRateInvalid =
-        manualActive && state.hourType === "custom" && (!state.customRate || state.customRate <= 0);
-    refs.customRate.classList.toggle("invalid", customRateInvalid);
-    refs.customRateError.style.display = customRateInvalid ? "block" : "none";
-    refs.customRateError.textContent = customRateInvalid ? "Ingrese un valor por hora valido." : "";
-    refs.exportBtn.disabled = customRateInvalid;
-
-    const hourlyEntries = getHourlyEntries(totals, manualActive, state, customRateInvalid, currentRate);
+    const hourlyEntries = getHourlyEntries(totals, false, state, false, catalog.rates.sinIa);
     renderHourlyList(hourlyEntries);
 
-    renderBreakdown(totals, disabledSet);
+    renderBreakdown(totals, disabledSet, state);
 }
 
-function renderBreakdown(totals, disabledSet) {
+function renderBreakdown(totals, disabledSet, state) {
     if (refs.breakdownSetup) refs.breakdownSetup.innerHTML = "";
     if (refs.breakdownMonthly) refs.breakdownMonthly.innerHTML = "";
     totals.breakdown.forEach((item) => {
@@ -527,10 +481,71 @@ function renderBreakdown(totals, disabledSet) {
         const title = document.createElement("span");
         title.className = "breakdown-title";
         title.textContent = item.label;
-        const amount = document.createElement("strong");
-        amount.textContent = formatMoney(item.value);
+
+        // Build module key for tracking
+        const moduleKey = `${item.category}:${item.removable.type}:${item.removable.id ?? 'default'}`;
+
+        // Create price display/edit container
+        const valueEdit = document.createElement("div");
+        valueEdit.className = "breakdown-value-edit";
+        valueEdit.dataset.moduleKey = moduleKey;
+
+        // Price display (default state)
+        const priceDisplay = document.createElement("div");
+        priceDisplay.className = "breakdown-price-display";
+
+        const priceAmount = document.createElement("strong");
+        priceAmount.className = "breakdown-price-amount";
+        priceAmount.textContent = formatMoney(item.value);
+        priceDisplay.appendChild(priceAmount);
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "breakdown-edit-btn";
+        editBtn.textContent = "Editar";
+        editBtn.type = "button";
+        editBtn.dataset.action = "edit-price";
+        priceDisplay.appendChild(editBtn);
+
+        // Price input (edit state - hidden by default)
+        const priceInputContainer = document.createElement("div");
+        priceInputContainer.className = "breakdown-price-input-container";
+        priceInputContainer.style.display = "none";
+
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.className = "breakdown-price-input";
+        priceInput.min = "0";
+        priceInput.step = "50";
+        priceInput.value = item.value;
+        priceInputContainer.appendChild(priceInput);
+
+        const saveBtn = document.createElement("button");
+        saveBtn.className = "breakdown-save-btn";
+        saveBtn.textContent = "✓";
+        saveBtn.type = "button";
+        saveBtn.dataset.action = "save-price";
+        priceInputContainer.appendChild(saveBtn);
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.className = "breakdown-cancel-btn";
+        cancelBtn.textContent = "✕";
+        cancelBtn.type = "button";
+        cancelBtn.dataset.action = "cancel-edit";
+        priceInputContainer.appendChild(cancelBtn);
+
+        valueEdit.appendChild(priceDisplay);
+        valueEdit.appendChild(priceInputContainer);
+
+        // Show original price if overridden
+        if (item.hasOverride) {
+            const originalPrice = document.createElement("span");
+            originalPrice.className = "original-price";
+            originalPrice.textContent = `Original: ${formatMoney(item.originalValue)}`;
+            valueEdit.appendChild(originalPrice);
+        }
+
         header.appendChild(title);
-        header.appendChild(amount);
+        header.appendChild(valueEdit);
 
         let enabled = !item.disabled;
         if (item.removable) {
@@ -553,12 +568,18 @@ function renderBreakdown(totals, disabledSet) {
 
         li.classList.toggle("breakdown-card-disabled", !enabled);
 
+
         li.appendChild(header);
 
         const details = [];
-        if (item.hours) details.push(`${item.hours} h`);
-        if (item.hourly) details.push(`${formatMoneyPrecise(item.hourly)}/h`);
-        if (item.note) details.push(item.note);
+        // Only show hours/hourly if there's no note (to avoid too much info)
+        if (item.note) {
+            details.push(item.note);
+        } else {
+            if (item.hours) details.push(`${item.hours} h`);
+            if (item.hourly) details.push(`${formatMoneyPrecise(item.hourly)}/h`);
+        }
+
         if (details.length) {
             const detailEl = document.createElement("div");
             detailEl.className = "breakdown-details";

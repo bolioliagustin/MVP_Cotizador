@@ -114,45 +114,28 @@ export function calculateTotals(state) {
   if (!sessionPackageDisabled) monthlyBase += sessionPackage.cost;
   if (!heyBiDisabled) monthlyBase += heyBiPlan.cost;
 
-  const manualActive = state.manualEnabled;
-  const hasManualHours = manualActive && state.manualHours !== null;
   const totalHours = sinIaHours + iaHours;
-  const effectiveHours = hasManualHours ? state.manualHours : totalHours;
 
+  // Apply module overrides if they exist
+  const getOverriddenValue = (category, type, id, originalValue) => {
+    const key = `${category}:${type}:${id ?? 'default'}`;
+    return state.moduleOverrides?.[key] ?? originalValue;
+  };
+
+  // Calculate final totals with overrides applied at the breakdown level
   let finalSetupList = setupBase;
-  if (manualActive && state.autoSetup) {
-    let rate = state.hourType === "custom" ? state.customRate : rateByType(state.hourType);
-    if (!rate || rate <= 0) rate = rateByType("sinIa");
-    finalSetupList = effectiveHours * rate;
-  } else if (manualActive && state.setupOverride !== null) {
-    finalSetupList = state.setupOverride;
-  }
-
   let finalMonthlyList = monthlyBase;
-  if (manualActive && state.monthlyOverride !== null) {
-    finalMonthlyList = state.monthlyOverride;
-  }
 
-  const setupMargin = finalSetupList * (1 + partner.setupMargin);
-  const monthlyMargin = finalMonthlyList * (1 + partner.monthlyMargin);
 
-  let displaySinIa = sinIaHours;
-  let displayIa = iaHours;
-  if (hasManualHours) {
-    if (state.hourType === "ia") {
-      displaySinIa = 0;
-      displayIa = effectiveHours;
-    } else {
-      displaySinIa = effectiveHours;
-      displayIa = 0;
-    }
-  }
 
   const breakdown = [];
-  if (impl.cost)
+  if (impl.cost) {
+    const overriddenValue = getOverriddenValue('setup', 'implementation', impl.id, impl.cost);
     breakdown.push({
       label: impl.name,
-      value: impl.cost,
+      value: overriddenValue,
+      originalValue: impl.cost,
+      hasOverride: overriddenValue !== impl.cost,
       hours: impl.hours,
       labor: impl.labor,
       hourly: impl.hours ? impl.cost / impl.hours : null,
@@ -160,34 +143,45 @@ export function calculateTotals(state) {
       disabled: isDisabled("implementation", impl.id),
       category: "setup",
     });
-  implementationExtras.forEach((item) =>
+  }
+
+  implementationExtras.forEach((item) => {
+    const overriddenValue = getOverriddenValue('setup', 'implementationExtras', item.id, item.cost);
     breakdown.push({
       label: item.name,
-      value: item.cost,
+      value: overriddenValue,
+      originalValue: item.cost,
+      hasOverride: overriddenValue !== item.cost,
       hours: item.hours,
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
       removable: { type: "implementationExtras", id: item.id },
       disabled: isDisabled("implementationExtras", item.id),
       category: "setup",
-    })
-  );
-  addons.forEach((item) =>
+    });
+  });
+  addons.forEach((item) => {
+    const overriddenValue = getOverriddenValue('setup', 'addons', item.id, item.cost);
     breakdown.push({
       label: item.name,
-      value: item.cost,
+      value: overriddenValue,
+      originalValue: item.cost,
+      hasOverride: overriddenValue !== item.cost,
       hours: item.hours,
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
       removable: { type: "addons", id: item.id },
       disabled: isDisabled("addons", item.id),
       category: "setup",
-    })
-  );
+    });
+  });
   if (integration) {
+    const overriddenSetup = getOverriddenValue('setup', 'integration', integration.id, integration.cost);
     breakdown.push({
       label: integration.label,
-      value: integration.cost,
+      value: overriddenSetup,
+      originalValue: integration.cost,
+      hasOverride: overriddenSetup !== integration.cost,
       hours: integration.hours,
       labor: integration.labor,
       hourly: integration.hourly,
@@ -197,19 +191,25 @@ export function calculateTotals(state) {
       category: "setup",
     });
     if ((integration.monthly ?? 0) > 0) {
+      const overriddenMonthly = getOverriddenValue('monthly', 'integration', integration.id, integration.monthly);
       breakdown.push({
         label: `${integration.label} (mensual)`,
-        value: integration.monthly,
+        value: overriddenMonthly,
+        originalValue: integration.monthly,
+        hasOverride: overriddenMonthly !== integration.monthly,
         removable: { type: "integration", id: integration.id },
         disabled: Boolean(integration.disabled),
         category: "monthly",
       });
     }
   }
-  customIntegrations.forEach((custom) =>
+  customIntegrations.forEach((custom) => {
+    const overriddenValue = getOverriddenValue('setup', 'customIntegrations', custom.id, custom.cost);
     breakdown.push({
       label: custom.label,
-      value: custom.cost,
+      value: overriddenValue,
+      originalValue: custom.cost,
+      hasOverride: overriddenValue !== custom.cost,
       hours: custom.hours,
       labor: custom.labor,
       hourly: custom.rate,
@@ -217,24 +217,44 @@ export function calculateTotals(state) {
       removable: { type: "customIntegrations", id: custom.id },
       disabled: isDisabled("customIntegrations", custom.id),
       category: "setup",
-    })
-  );
-  if (sessionPackage.cost)
+    });
+  });
+  if (sessionPackage.cost) {
+    const overriddenValue = getOverriddenValue('monthly', 'sessionPackage', null, sessionPackage.cost);
     breakdown.push({
       label: sessionPackage.label,
-      value: sessionPackage.cost,
+      value: overriddenValue,
+      originalValue: sessionPackage.cost,
+      hasOverride: overriddenValue !== sessionPackage.cost,
       removable: { type: "sessionPackage" },
       disabled: sessionPackageDisabled,
       category: "monthly",
     });
-  if (heyBiPlan.cost)
+  }
+  if (heyBiPlan.cost) {
+    const overriddenValue = getOverriddenValue('monthly', 'heyBiPlan', null, heyBiPlan.cost);
     breakdown.push({
       label: heyBiPlan.label,
-      value: heyBiPlan.cost,
+      value: overriddenValue,
+      originalValue: heyBiPlan.cost,
+      hasOverride: overriddenValue !== heyBiPlan.cost,
       removable: { type: "heyBiPlan" },
       disabled: heyBiDisabled,
       category: "monthly",
     });
+  }
+
+  // Recalculate totals from breakdown (with overrides applied)
+  finalSetupList = breakdown
+    .filter(item => item.category === 'setup' && !item.disabled)
+    .reduce((sum, item) => sum + item.value, 0);
+
+  finalMonthlyList = breakdown
+    .filter(item => item.category === 'monthly' && !item.disabled)
+    .reduce((sum, item) => sum + item.value, 0);
+
+  const setupMargin = finalSetupList * (1 + partner.setupMargin);
+  const monthlyMargin = finalMonthlyList * (1 + partner.monthlyMargin);
 
   return {
     finalSetupList,
@@ -243,9 +263,9 @@ export function calculateTotals(state) {
     monthlyBase,
     setupMargin,
     monthlyMargin,
-    manualHours: effectiveHours,
-    sinIaHours: displaySinIa,
-    iaHours: displayIa,
+    manualHours: totalHours,
+    sinIaHours,
+    iaHours,
     breakdown,
   };
 }

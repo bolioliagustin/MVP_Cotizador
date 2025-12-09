@@ -10,15 +10,9 @@ export const defaultState = {
   sessionPackage: "",
   heyBiPlan: "",
   partner: catalog.partners[0].id,
-  manualHours: null,
-  hourType: "sinIa",
-  customRate: null,
-  autoSetup: true,
-  manualEnabled: false,
-  setupOverride: null,
-  monthlyOverride: null,
   customIntegrations: [],
   disabledComponents: [],
+  moduleOverrides: {},
 };
 
 export function createStore(initialState = defaultState) {
@@ -31,6 +25,7 @@ export function createStore(initialState = defaultState) {
       ? initialState.customIntegrations.map((item) => ({ ...item }))
       : [],
     disabledComponents: new Set(initialState.disabledComponents ?? []),
+    moduleOverrides: { ...(initialState.moduleOverrides ?? {}) },
   };
 
   const getState = () => state;

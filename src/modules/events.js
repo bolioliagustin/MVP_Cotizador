@@ -38,45 +38,7 @@ export function bindEvents(store) {
 
     refs.heyBiSelect.addEventListener("change", (e) => store.setState({ heyBiPlan: e.target.value }));
 
-    refs.manualToggle.addEventListener("change", (e) => {
-        const enabled = e.target.checked;
-        if (enabled) {
-            const snapshotTotals = calculateTotals(store.getState());
-            store.setState({
-                manualEnabled: true,
-                manualHours: snapshotTotals.manualHours,
-            });
-        } else {
-            store.setState({
-                manualEnabled: false,
-                manualHours: null,
-                hourType: "sinIa",
-                customRate: null,
-            });
-        }
-    });
-    refs.manualHours.addEventListener("input", (e) =>
-        store.setState({ manualHours: coerceNumberInput(e.target.value) })
-    );
-    refs.hourTypeRadios.forEach((radio) =>
-        radio.addEventListener("change", (e) => {
-            const value = e.target.value;
-            store.setState({
-                hourType: value,
-                customRate: value === "custom" ? store.getState().customRate : null,
-            });
-        })
-    );
-    refs.customRate.addEventListener("input", (e) =>
-        store.setState({ customRate: coerceNumberInput(e.target.value) })
-    );
-    refs.autoHourly.addEventListener("change", (e) => store.setState({ autoSetup: e.target.checked }));
-    refs.setupOverride.addEventListener("input", (e) =>
-        store.setState({ setupOverride: coerceNumberInput(e.target.value) })
-    );
-    refs.monthlyOverride.addEventListener("input", (e) =>
-        store.setState({ monthlyOverride: coerceNumberInput(e.target.value) })
-    );
+
 
     if (refs.customIntegrationForm) {
         refs.customIntegrationForm.addEventListener("submit", (event) => {
@@ -117,6 +79,16 @@ export function bindEvents(store) {
     }
     if (refs.breakdownSection) {
         refs.breakdownSection.addEventListener("change", (e) => handleBreakdownChange(e, store));
+        refs.breakdownSection.addEventListener("click", (e) => {
+            const action = e.target.dataset.action;
+            if (action === "edit-price") {
+                handleEditPriceClick(e);
+            } else if (action === "save-price") {
+                handleSavePriceClick(e, store);
+            } else if (action === "cancel-edit") {
+                handleCancelEditClick(e);
+            }
+        });
     }
 
     refs.resetBtn.addEventListener("click", () => {
@@ -178,18 +150,83 @@ function toggleBreakdownComponent(type, id, enabled, store) {
     store.setState({ disabledComponents: next });
 }
 
+function handleEditPriceClick(event) {
+    const button = event.target;
+    const valueEdit = button.closest(".breakdown-value-edit");
+    if (!valueEdit) return;
+
+    const display = valueEdit.querySelector(".breakdown-price-display");
+    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
+    const input = inputContainer.querySelector(".breakdown-price-input");
+
+    // Hide display, show input
+    display.style.display = "none";
+    inputContainer.style.display = "flex";
+
+    // Focus the input
+    setTimeout(() => input.focus(), 0);
+}
+
+function handleSavePriceClick(event, store) {
+    const button = event.target;
+    const valueEdit = button.closest(".breakdown-value-edit");
+    if (!valueEdit) return;
+
+    const moduleKey = valueEdit.dataset.moduleKey;
+    const input = valueEdit.querySelector(".breakdown-price-input");
+    const rawValue = input.value.trim();
+
+    const moduleOverrides = { ...store.getState().moduleOverrides };
+
+    if (rawValue === '' || rawValue === null) {
+        // Reset to original value
+        delete moduleOverrides[moduleKey];
+    } else {
+        const numericValue = parseFloat(rawValue);
+        if (!isNaN(numericValue) && numericValue >= 0) {
+            moduleOverrides[moduleKey] = numericValue;
+        } else {
+            // Invalid input, don't save
+            handleCancelEditClick(event);
+            return;
+        }
+    }
+
+    store.setState({ moduleOverrides });
+
+    // Hide input, show display
+    const display = valueEdit.querySelector(".breakdown-price-display");
+    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
+    inputContainer.style.display = "none";
+    display.style.display = "flex";
+}
+
+function handleCancelEditClick(event) {
+    const button = event.target;
+    const valueEdit = button.closest(".breakdown-value-edit");
+    if (!valueEdit) return;
+
+    const display = valueEdit.querySelector(".breakdown-price-display");
+    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
+    const input = inputContainer.querySelector(".breakdown-price-input");
+
+    // Reset input to current display value (cancel changes)
+    const displayAmount = valueEdit.querySelector(".breakdown-price-amount").textContent;
+    // Extract number from formatted money string
+    const currentValue = displayAmount.replace(/[^0-9.-]/g, '');
+    input.value = currentValue;
+
+    // Hide input, show display
+    inputContainer.style.display = "none";
+    display.style.display = "flex";
+}
+
 async function handleExportImage(store) {
     if (!refs.proposalPreview) return;
     const state = store.getState();
     const totals = calculateTotals(state);
-    const manualActive = state.manualEnabled;
-    const currentRate =
-        manualActive && state.hourType === "custom" && state.customRate
-            ? state.customRate
-            : catalog.rates[state.hourType] || catalog.rates.sinIa;
-    const customRateInvalid =
-        manualActive && state.hourType === "custom" && (!state.customRate || state.customRate <= 0);
-    const hourlyEntries = getHourlyEntries(totals, manualActive, state, customRateInvalid, currentRate);
+    const currentRate = catalog.rates.sinIa;
+    const hourlyEntries = getHourlyEntries(totals, false, state, false, currentRate);
 
     refs.proposalPreview.innerHTML = "";
     const sheet = renderProposalSheet(state, totals, hourlyEntries, currentRate);

@@ -180,59 +180,7 @@
                 </div>
               </div>
             </div>
-          </section>
-
-          <section class="card" aria-labelledby="manual-block-label">
-            <h2 id="manual-block-label">Edicion manual & calculo por horas</h2>
-            <div class="toggle-row">
-              <label>
-                <input type="checkbox" id="manual-toggle" />
-                Activar edicion manual
-              </label>
-            </div>
-            <div class="manual-grid">
-              <div>
-                <label for="manual-hours">Horas totales</label>
-                <input type="number" id="manual-hours" min="0" step="1" placeholder="Auto" />
-                <p class="state-info">Tarifa actual: <span id="hourly-rate-info">-</span></p>
-              </div>
-              <div>
-                <span class="label">Tipo de horas</span>
-                <div class="options" style="flex-direction: row; gap: 10px">
-                  <label><input type="radio" name="hourType" value="sinIa" checked />Sin IA</label>
-                  <label><input type="radio" name="hourType" value="ia" />IA</label>
-                  <label><input type="radio" name="hourType" value="custom" />Personalizado</label>
-                </div>
-                <input
-                  type="number"
-                  id="custom-rate"
-                  min="0"
-                  step="5"
-                  placeholder="Valor por hora personalizado"
-                  style="margin-top: 6px; display: none"
-                />
-                <p id="custom-rate-error" class="state-info" style="color: #ff4d4d; display: none"></p>
-              </div>
-              <div>
-                <label>
-                  <input type="checkbox" id="auto-hourly" checked />
-                  Calcular setup usando tarifa/hora
-                </label>
-              </div>
-            </div>
-
-            <div class="manual-grid" style="margin-top: 12px">
-              <div>
-                <label for="setup-override">Setup lista (USD)</label>
-                <input type="number" id="setup-override" min="0" step="50" placeholder="Auto" disabled />
-              </div>
-              <div>
-                <label for="monthly-override">Mensual lista (USD)</label>
-                <input type="number" id="monthly-override" min="0" step="25" placeholder="Auto" />
-              </div>
-            </div>
-          </section>
-        </div>
+          </section></div>
 
         <aside class="sidebar">
           <section class="summary" aria-live="polite">
@@ -279,3 +227,4 @@
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
+
