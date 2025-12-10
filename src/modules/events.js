@@ -78,7 +78,7 @@ export function bindEvents(store) {
         refs.customIntegrationList.addEventListener("click", (e) => handleCustomIntegrationClick(e, store));
     }
     if (refs.breakdownSection) {
-        refs.breakdownSection.addEventListener("change", (e) => handleBreakdownChange(e, store));
+
         refs.breakdownSection.addEventListener("click", (e) => {
             const action = e.target.dataset.action;
             if (action === "edit-price") {
@@ -87,6 +87,8 @@ export function bindEvents(store) {
                 handleSavePriceClick(e, store);
             } else if (action === "cancel-edit") {
                 handleCancelEditClick(e);
+            } else if (action === "remove-component") {
+                handleBreakdownChange(e, store);
             }
         });
     }
@@ -135,33 +137,74 @@ function bindMultiSelect(container, key, store) {
 
 function handleBreakdownChange(event, store) {
     const target = event.target;
-    if (!target.matches('input[data-action="remove-component"]')) return;
+    if (!target.matches('button[data-action="remove-component"]')) return;
     const type = target.dataset.removeType;
     const id = target.dataset.removeId ?? null;
-    toggleBreakdownComponent(type, id, target.checked, store);
+    removeComponent(type, id, store);
 }
 
-function toggleBreakdownComponent(type, id, enabled, store) {
+function removeComponent(type, id, store) {
     if (!type) return;
-    const next = new Set(store.getState().disabledComponents);
+    const state = store.getState();
+
+    // 1. Manejo de Sets (Checkbox groups)
+    if (type === 'implementationExtras' || type === 'addons') {
+        if (!id) return;
+        const currentSet = new Set(state[type]);
+        currentSet.delete(id);
+        store.setState({ [type]: currentSet });
+        return;
+    }
+
+    // 2. Manejo de Integraciones Personalizadas (Array)
+    if (type === 'customIntegrations') {
+        if (!id) return;
+        const next = state.customIntegrations.filter(item => item.id !== id);
+        store.setState({ customIntegrations: next });
+        return;
+    }
+
+    // 3. Manejo de Selects únicos (Reseteo a string vacío)
+    const stateMap = {
+        'implementation': 'implementation',
+        'integration': 'integrations', // Singular type -> Plural state key
+        'sessionPackage': 'sessionPackage',
+        'heyBiPlan': 'heyBiPlan'
+    };
+
+    const stateKey = stateMap[type];
+    if (stateKey) {
+        store.setState({ [stateKey]: "" });
+
+        // Si removemos el modelo de sesión, también quitamos el paquete?
+        // El breakdown usa 'sessionPackage', así que solo quitamos el paquete.
+
+        // Si removemos la integración, tal vez querramos resetear el toggle de IA? 
+        // Por ahora solo reseteamos la selección principal.
+        return;
+    }
+
+    // Fallback por si hay algún otro tipo no manejado (para evitar errores)
+    const next = new Set(state.disabledComponents);
     const key = componentKey(type, id);
-    if (enabled) next.delete(key);
-    else next.add(key);
+    next.add(key);
     store.setState({ disabledComponents: next });
 }
 
 function handleEditPriceClick(event) {
     const button = event.target;
-    const valueEdit = button.closest(".breakdown-value-edit");
-    if (!valueEdit) return;
+    const card = button.closest(".breakdown-card");
+    if (!card) return;
 
-    const display = valueEdit.querySelector(".breakdown-price-display");
-    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
+    const display = card.querySelector(".breakdown-price-display");
+    const inputContainer = card.querySelector(".breakdown-price-input-container");
     const input = inputContainer.querySelector(".breakdown-price-input");
+    const controls = card.querySelector(".breakdown-controls"); // Actions row
 
     // Hide display, show input
-    display.style.display = "none";
-    inputContainer.style.display = "flex";
+    if (display) display.style.display = "none";
+    if (controls) controls.style.display = "none"; // Hide edit/remove buttons while editing
+    if (inputContainer) inputContainer.style.display = "flex";
 
     // Focus the input
     setTimeout(() => input.focus(), 0);
@@ -169,11 +212,19 @@ function handleEditPriceClick(event) {
 
 function handleSavePriceClick(event, store) {
     const button = event.target;
-    const valueEdit = button.closest(".breakdown-value-edit");
-    if (!valueEdit) return;
+    // Save button is INSIDE the input container, so closest is fine or we use card
+    const card = button.closest(".breakdown-card");
+    if (!card) return;
 
-    const moduleKey = valueEdit.dataset.moduleKey;
-    const input = valueEdit.querySelector(".breakdown-price-input");
+    // The module key is on a container - let's put it on the input container or the card?
+    // Let's expect it on the input container or a dedicated wrapper. 
+    // In ui.js I will put data-module-key on the input-container or price-wrapper.
+    // Let's modify ui.js to put it on .breakdown-price-wrapper
+
+    const wrapper = card.querySelector(".breakdown-price-wrapper");
+    const moduleKey = wrapper.dataset.moduleKey;
+
+    const input = card.querySelector(".breakdown-price-input");
     const rawValue = input.value.trim();
 
     const moduleOverrides = { ...store.getState().moduleOverrides };
@@ -193,32 +244,32 @@ function handleSavePriceClick(event, store) {
     }
 
     store.setState({ moduleOverrides });
-
-    // Hide input, show display
-    const display = valueEdit.querySelector(".breakdown-price-display");
-    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
-    inputContainer.style.display = "none";
-    display.style.display = "flex";
+    // UI update happens via re-render, so we don't need to manually toggle display usually,
+    // but just in case of lag/opt:
+    handleCancelEditClick(event); // Reverts visibility state
 }
 
 function handleCancelEditClick(event) {
     const button = event.target;
-    const valueEdit = button.closest(".breakdown-value-edit");
-    if (!valueEdit) return;
+    const card = button.closest(".breakdown-card");
+    if (!card) return;
 
-    const display = valueEdit.querySelector(".breakdown-price-display");
-    const inputContainer = valueEdit.querySelector(".breakdown-price-input-container");
+    const display = card.querySelector(".breakdown-price-display");
+    const inputContainer = card.querySelector(".breakdown-price-input-container");
     const input = inputContainer.querySelector(".breakdown-price-input");
+    const controls = card.querySelector(".breakdown-controls");
 
     // Reset input to current display value (cancel changes)
-    const displayAmount = valueEdit.querySelector(".breakdown-price-amount").textContent;
-    // Extract number from formatted money string
-    const currentValue = displayAmount.replace(/[^0-9.-]/g, '');
-    input.value = currentValue;
+    if (display) {
+        const displayAmount = display.querySelector(".breakdown-price-amount")?.textContent || "0";
+        const currentValue = displayAmount.replace(/[^0-9.-]/g, '');
+        if (input) input.value = currentValue;
+    }
 
     // Hide input, show display
-    inputContainer.style.display = "none";
-    display.style.display = "flex";
+    if (inputContainer) inputContainer.style.display = "none";
+    if (display) display.style.display = "flex";
+    if (controls) controls.style.display = "flex";
 }
 
 async function handleExportImage(store) {

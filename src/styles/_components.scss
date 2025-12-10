@@ -693,21 +693,52 @@ input:disabled {
     color: var(--muted);
 }
 
-.component-remove {
+.component-remove-btn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: #ef4444;
+    /* Standard red */
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 120ms ease;
+    height: 32px;
+    /* Fixed height to match edit button roughly */
 }
 
-.component-remove input {
-    width: 14px;
-    height: 14px;
+.component-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
 }
 
-.component-remove span {
-    white-space: nowrap;
+.component-remove-btn svg {
+    display: block;
+}
+
+@media (max-width: 500px) {
+    .breakdown-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .breakdown-actions {
+        width: 100%;
+        justify-content: space-between;
+        margin-left: 0 !important;
+        /* Override inline style */
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .breakdown-title {
+        width: 100%;
+    }
 }

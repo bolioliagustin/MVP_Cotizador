@@ -2,7 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 
 export const aiService = {
     getKey() {
-        return "AIzaSyC9Ot4YVS5sKAL3VWgbQhjJIgu9QKg2B1Q";
+        return import.meta.env.VITE_GOOGLE_API_KEY || localStorage.getItem("heynow_api_key");
+    },
+
+    setKey(key) {
+        localStorage.setItem("heynow_api_key", key);
     },
 
     hasKey() {

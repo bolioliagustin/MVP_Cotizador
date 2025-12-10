@@ -1,71 +1,132 @@
 @use "variables" as *;
 
-/* Breakdown Value Edit */
-.breakdown-value-edit {
+/* Breakdown Card New Layout */
+.breakdown-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 16px;
+    /* slightly more padding */
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 8px;
+    /* Spacing between cards */
+}
+
+.breakdown-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    /* Take up remaining space */
+}
+
+.breakdown-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+}
+
+.breakdown-details {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.breakdown-meta {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 4px;
-    margin-left: auto;
+    gap: 10px;
+    min-width: 140px;
+    /* Ensure space for price/buttons */
+    flex-shrink: 0;
 }
 
-.breakdown-price-display {
+.breakdown-price-wrapper {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .breakdown-price-amount {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    /* Larger price */
+    font-weight: 700;
 }
 
-.breakdown-edit-btn {
-    padding: 4px 10px;
+.original-price {
     font-size: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    cursor: pointer;
-    transition: all 120ms ease;
+    color: var(--muted);
+    text-decoration: line-through;
+    /* Strikethrough for clarity */
+    margin-top: 2px;
+}
+
+.breakdown-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.breakdown-control-btn {
+    padding: 4px 10px;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 600;
 }
 
-.breakdown-edit-btn:hover {
-    border-color: rgba(255, 255, 255, 0.4);
+/* Edit Button Style */
+.breakdown-control-btn.edit {
+    color: #94a3b8;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.breakdown-control-btn.edit:hover {
+    color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
+/* Remove Button Style */
+.breakdown-control-btn.remove {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.breakdown-control-btn.remove:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Price Input State */
 .breakdown-price-input-container {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
+    /* Space from controls */
 }
 
 .breakdown-price-input {
     width: 90px;
     padding: 6px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 1rem;
     text-align: right;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    transition: all 120ms ease;
-}
-
-.breakdown-price-input:hover {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.breakdown-price-input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(255, 223, 0, 0.15);
-    background: rgba(255, 255, 255, 0.1);
+    background: #000;
+    color: white;
 }
 
 .breakdown-save-btn,
@@ -75,30 +136,40 @@
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
     cursor: pointer;
-    transition: all 120ms ease;
-    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .breakdown-save-btn:hover {
+    background: #10b981;
     border-color: #10b981;
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
 }
 
 .breakdown-cancel-btn:hover {
+    background: #ef4444;
     border-color: #ef4444;
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
 }
 
-.original-price {
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-weight: 400;
+@media (max-width: 500px) {
+    .breakdown-card {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .breakdown-meta {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 12px;
+    }
+
+    .breakdown-price-wrapper {
+        align-items: flex-start;
+    }
 }
