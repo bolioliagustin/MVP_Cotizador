@@ -11,8 +11,9 @@ export const defaultState = {
   heyBiPlan: "",
   partner: catalog.partners[0].id,
   customIntegrations: [],
-  disabledComponents: [],
   moduleOverrides: {},
+  customSummaryRate: null, // Tarifa personalizada para mostrar en el resumen exportado
+  messageRegion: "", // Región seleccionada para costos de mensajes
 };
 
 export function createStore(initialState = defaultState) {
@@ -24,18 +25,18 @@ export function createStore(initialState = defaultState) {
     customIntegrations: Array.isArray(initialState.customIntegrations)
       ? initialState.customIntegrations.map((item) => ({ ...item }))
       : [],
-    disabledComponents: new Set(initialState.disabledComponents ?? []),
     moduleOverrides: { ...(initialState.moduleOverrides ?? {}) },
   };
 
   const getState = () => state;
 
   const setState = (patch) => {
-    state = { ...state, ...patch };
+    // Support both object and function callback patterns
+    const updates = typeof patch === 'function' ? patch(state) : patch;
+    state = { ...state, ...updates };
     if (!(state.addons instanceof Set)) state.addons = new Set(state.addons);
     if (!(state.implementationExtras instanceof Set))
       state.implementationExtras = new Set(state.implementationExtras);
-    if (!(state.disabledComponents instanceof Set)) state.disabledComponents = new Set(state.disabledComponents);
     listeners.forEach((listener) => listener(state));
   };
 

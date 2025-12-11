@@ -93,3 +93,18 @@ export const heyBiPlans = [
   { id: "heybi-50000", label: "Hey BI hasta 50000 sesiones", cost: 645 },
   { id: "heybi-50000plus", label: "Hey BI mas de 50000 sesiones", cost: 870 },
 ];
+
+// Costos de mensajes salientes de WhatsApp (por mensaje)
+export const messageCosts = [
+  { id: "chile", region: "Chile", marketing: 0.0936, utility: 0.0235, authentication: 0.0235 },
+  { id: "resto-latam", region: "Resto de LatAm", marketing: 0.0779, utility: 0.0133, authentication: 0.0133 },
+  { id: "peru", region: "Perú", marketing: 0.0740, utility: 0.0235, authentication: 0.0235 },
+  { id: "italia", region: "Italia", marketing: 0.0727, utility: 0.0353, authentication: 0.0353 },
+  { id: "brasil", region: "Brasil", marketing: 0.0658, utility: 0.0080, authentication: 0.0080 },
+  { id: "argentina", region: "Argentina", marketing: 0.0651, utility: 0.0340, authentication: 0.0340 },
+  { id: "espana", region: "España", marketing: 0.0647, utility: 0.0235, authentication: 0.0235 },
+  { id: "mexico", region: "México", marketing: 0.0459, utility: 0.0100, authentication: 0.0100 },
+  { id: "north-america", region: "América del Norte", marketing: 0.0263, utility: 0.0047, authentication: 0.0047 },
+  { id: "colombia", region: "Colombia", marketing: 0.0132, utility: 0.0002, authentication: 0.0002 },
+  { id: "none", region: "Sin WhatsApp", marketing: null, utility: null, authentication: null },
+];

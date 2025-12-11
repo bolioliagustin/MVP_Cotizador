@@ -46,9 +46,7 @@ const buildCatalogIntegration = (state) => {
 };
 
 export function calculateTotals(state) {
-  const disabledComponents = state.disabledComponents instanceof Set ? state.disabledComponents : new Set();
-  const isDisabled = (type, id) => disabledComponents.has(componentKey(type, id));
-
+  const overrides = state.priceOverrides || {};
   const impl =
     catalog.implementations.find((item) => item.id === state.implementation) ?? {
       id: "implementation-default",
@@ -76,50 +74,44 @@ export function calculateTotals(state) {
     if (item.labor === "ia") iaHours += hours;
     else sinIaHours += hours;
   };
-  const implDisabled = isDisabled("implementation", impl.id);
-  trackHours(impl, implDisabled);
-  let setupBase = implDisabled ? 0 : impl.cost;
+
+  trackHours(impl, false);
+  let setupBase = impl.cost;
   let monthlyBase = 0;
 
   implementationExtras.forEach((item) => {
-    const disabled = isDisabled("implementationExtras", item.id);
-    trackHours(item, disabled);
-    if (!disabled) setupBase += item.cost;
+    trackHours(item, false);
+    setupBase += item.cost;
   });
+
   addons.forEach((addon) => {
-    const disabled = isDisabled("addons", addon.id);
-    trackHours(addon, disabled);
-    if (!disabled) setupBase += addon.cost;
+    trackHours(addon, false);
+    setupBase += addon.cost;
   });
 
   if (integration) {
-    const disabled = isDisabled("integration", integration.id);
-    trackHours(integration, disabled);
-    if (disabled) {
-      integration = { ...integration, disabled: true };
-    } else {
-      setupBase += integration.cost;
-      monthlyBase += integration.monthly ?? 0;
-    }
+    trackHours(integration, false);
+    setupBase += integration.cost;
+    monthlyBase += integration.monthly ?? 0;
   }
 
   customIntegrations.forEach((item) => {
-    const disabled = isDisabled("customIntegrations", item.id);
-    trackHours(item, disabled);
-    if (!disabled) setupBase += item.cost;
+    trackHours(item, false);
+    setupBase += item.cost;
   });
 
-  const sessionPackageDisabled = isDisabled("sessionPackage");
-  const heyBiDisabled = isDisabled("heyBiPlan");
-  if (!sessionPackageDisabled) monthlyBase += sessionPackage.cost;
-  if (!heyBiDisabled) monthlyBase += heyBiPlan.cost;
+  monthlyBase += sessionPackage.cost;
+  monthlyBase += heyBiPlan.cost;
 
   const totalHours = sinIaHours + iaHours;
 
   // Apply module overrides if they exist
   const getOverriddenValue = (category, type, id, originalValue) => {
     const key = `${category}:${type}:${id ?? 'default'}`;
-    return state.moduleOverrides?.[key] ?? originalValue;
+    console.log('Looking for override:', key, 'in', state.moduleOverrides);
+    const result = state.moduleOverrides?.[key] ?? originalValue;
+    console.log('Result:', result);
+    return result;
   };
 
   // Calculate final totals with overrides applied at the breakdown level
@@ -140,7 +132,6 @@ export function calculateTotals(state) {
       labor: impl.labor,
       hourly: impl.hours ? impl.cost / impl.hours : null,
       removable: { type: "implementation", id: impl.id },
-      disabled: isDisabled("implementation", impl.id),
       category: "setup",
     });
   }
@@ -156,7 +147,6 @@ export function calculateTotals(state) {
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
       removable: { type: "implementationExtras", id: item.id },
-      disabled: isDisabled("implementationExtras", item.id),
       category: "setup",
     });
   });
@@ -171,7 +161,6 @@ export function calculateTotals(state) {
       labor: item.labor,
       hourly: item.hours ? item.cost / item.hours : null,
       removable: { type: "addons", id: item.id },
-      disabled: isDisabled("addons", item.id),
       category: "setup",
     });
   });
@@ -187,7 +176,6 @@ export function calculateTotals(state) {
       hourly: integration.hourly,
       note: integration.monthly ? `Mensual ${formatMoney(integration.monthly)}` : undefined,
       removable: { type: "integration", id: integration.id },
-      disabled: Boolean(integration.disabled),
       category: "setup",
     });
     if ((integration.monthly ?? 0) > 0) {
@@ -198,7 +186,6 @@ export function calculateTotals(state) {
         originalValue: integration.monthly,
         hasOverride: overriddenMonthly !== integration.monthly,
         removable: { type: "integration", id: integration.id },
-        disabled: Boolean(integration.disabled),
         category: "monthly",
       });
     }
@@ -213,9 +200,7 @@ export function calculateTotals(state) {
       hours: custom.hours,
       labor: custom.labor,
       hourly: custom.rate,
-      note: custom.override ? "Precio manual" : "Horas x tarifa",
       removable: { type: "customIntegrations", id: custom.id },
-      disabled: isDisabled("customIntegrations", custom.id),
       category: "setup",
     });
   });
@@ -227,8 +212,8 @@ export function calculateTotals(state) {
       originalValue: sessionPackage.cost,
       hasOverride: overriddenValue !== sessionPackage.cost,
       removable: { type: "sessionPackage" },
-      disabled: sessionPackageDisabled,
       category: "monthly",
+      extraCost: sessionPackage.extraCost, // Costo por sesión adicional
     });
   }
   if (heyBiPlan.cost) {
@@ -239,7 +224,6 @@ export function calculateTotals(state) {
       originalValue: heyBiPlan.cost,
       hasOverride: overriddenValue !== heyBiPlan.cost,
       removable: { type: "heyBiPlan" },
-      disabled: heyBiDisabled,
       category: "monthly",
     });
   }
@@ -267,6 +251,36 @@ export function calculateTotals(state) {
     sinIaHours,
     iaHours,
     breakdown,
+  };
+}
+
+// Función auxiliar para analizar las tarifas por hora en el breakdown
+export function analyzeHourlyRates(breakdown) {
+  const ratesWithHours = breakdown
+    .filter(item => !item.disabled && item.category === 'setup' && item.hours && item.hourly)
+    .map(item => ({
+      rate: item.hourly,
+      hours: item.hours
+    }));
+
+  if (ratesWithHours.length === 0) {
+    return { hasMultipleRates: false, weightedAverage: 0, uniqueRates: [] };
+  }
+
+  const uniqueRates = [...new Set(ratesWithHours.map(r => r.rate))];
+  const hasMultipleRates = uniqueRates.length > 1;
+
+  // Calcular promedio ponderado
+  const totalHours = ratesWithHours.reduce((sum, item) => sum + item.hours, 0);
+  const weightedSum = ratesWithHours.reduce((sum, item) => sum + (item.rate * item.hours), 0);
+  const weightedAverage = totalHours > 0 ? weightedSum / totalHours : 0;
+
+  return {
+    hasMultipleRates,
+    weightedAverage,
+    uniqueRates: uniqueRates.sort((a, b) => a - b),
+    minRate: Math.min(...uniqueRates),
+    maxRate: Math.max(...uniqueRates)
   };
 }
 

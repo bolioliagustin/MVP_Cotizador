@@ -1,6 +1,6 @@
-import { catalog, sessionModels, sessionPackages, heyBiPlans } from "../data/catalog.js";
+import { catalog, sessionModels, sessionPackages, heyBiPlans, messageCosts } from "../data/catalog.js";
 import { formatMoney, formatMoneyPrecise } from "../lib/format.js";
-import { calculateTotals } from "../lib/calculator.js";
+import { calculateTotals, analyzeHourlyRates } from "../lib/calculator.js";
 import { renderCustomIntegrations, updateCustomIntegrationPreview } from "./custom-integrations.js";
 import { renderImplementationInfo, renderIntegrationInfo } from "./renderTerms/setup.js";
 import { renderProposalSheet } from "./renderTerms/proposal.js";
@@ -12,13 +12,11 @@ export const qs = (sel) => document.querySelector(sel);
 
 export function cacheRefs() {
     refs.implementation = qs("#implementation");
-    refs.implInfoName = qs("#implementation-info-name");
     refs.implInfoCost = qs("#implementation-info-cost");
     refs.implInfoHours = qs("#implementation-info-hours");
     refs.implInfoRate = qs("#implementation-info-rate");
 
     refs.integrations = qs("#integrations");
-    refs.integrationInfoLabel = qs("#integrations-info-label");
     refs.integrationInfoCost = qs("#integration-info-cost");
     refs.integrationInfoHours = qs("#integration-info-hours");
     refs.integrationInfoRate = qs("#integration-info-rate");
@@ -53,8 +51,36 @@ export function cacheRefs() {
     refs.addCustomIntegrationBtn = qs("#add-custom-integration");
 
     refs.resetBtn = qs("#reset-btn");
+    refs.importInput = qs("#import-json-input");
+    refs.importBtn = qs("#import-json-btn");
     refs.exportBtn = qs("#export-json-btn");
+    refs.generateProposalBtn = qs("#generate-proposal-btn");
     refs.printBtn = qs("#print-btn");
+
+    // Proposal modals
+    refs.proposalModal = qs("#proposal-modal");
+    refs.proposalForm = qs("#proposal-form");
+    refs.closeProposalModal = qs("#close-proposal-modal");
+    refs.cancelProposal = qs("#cancel-proposal");
+
+    refs.proposalResultModal = qs("#proposal-result-modal");
+    refs.proposalContent = qs("#proposal-content");
+    refs.closeResultModal = qs("#close-result-modal");
+    refs.copyProposal = qs("#copy-proposal");
+    refs.editProposal = qs("#edit-proposal");
+    refs.regenerateProposal = qs("#regenerate-proposal");
+
+    // Save quote modal
+    refs.saveQuoteModal = qs("#save-quote-modal");
+    refs.saveQuoteForm = qs("#save-quote-form");
+    refs.closeSaveModal = qs("#close-save-modal");
+    refs.cancelSave = qs("#cancel-save");
+    refs.quoteClientName = qs("#quote-client-name");
+    refs.quoteTags = qs("#quote-tags");
+
+    // Quotes history
+    refs.quotesSearch = qs("#quotes-search");
+    refs.quotesList = qs("#quotes-list");
 
     refs.setupTotal = qs("#setup-total");
     refs.setupMargin = qs("#setup-margin");
@@ -66,6 +92,8 @@ export function cacheRefs() {
     refs.breakdownMonthly = qs("#breakdown-monthly");
     refs.hourlyList = qs("#hourly-list");
     refs.proposalPreview = qs("#proposal-preview");
+    refs.messageRegion = qs("#message-region");
+    refs.messageCostsTable = qs("#message-costs-table");
 }
 
 export function renderSelect(select, options, formatter) {
@@ -120,6 +148,12 @@ export function hydrateForm(store) {
         (item) => (item.id ? `${item.label} - ${formatMoney(item.cost)}` : item.label)
     );
 
+    renderSelect(
+        refs.messageRegion,
+        [{ id: "", region: "Seleccionar región..." }, ...messageCosts],
+        (item) => item.region
+    );
+
     if (refs.implExtras) {
         renderSelectableOptions(refs.implExtras, catalog.implementationExtras);
     }
@@ -139,6 +173,7 @@ export function syncFormState(state) {
     if (refs.sessionModel) refs.sessionModel.value = state.sessionModel;
     if (refs.sessionPackage) refs.sessionPackage.value = state.sessionPackage;
     if (refs.heyBiSelect) refs.heyBiSelect.value = state.heyBiPlan;
+    if (refs.messageRegion) refs.messageRegion.value = state.messageRegion || "";
 
     if (refs.implExtras) {
         updateSelectableOptions(refs.implExtras, state.implementationExtras);
@@ -249,7 +284,6 @@ export function getHourlyEntries(totals, manualActive, state, customRateInvalid,
 export function render(state) {
     syncFormState(state);
     const totals = calculateTotals(state);
-    const disabledSet = state.disabledComponents || new Set();
 
     renderExtrasSummary();
 
@@ -259,14 +293,42 @@ export function render(state) {
     refs.monthlyMargin.textContent = formatMoney(totals.monthlyMargin);
     refs.hoursTotal.textContent = `${totals.manualHours.toFixed(0)} h`;
 
+    // Gestión de tarifa personalizada para resumen
+    const rateAnalysis = analyzeHourlyRates(totals.breakdown);
+    const customRateInput = document.getElementById("custom-summary-rate-input");
+    const multipleRatesWarning = document.getElementById("multiple-rates-warning");
+    const customRateHint = document.getElementById("custom-rate-hint");
+
+    if (customRateInput) {
+        // Mostrar advertencia si hay múltiples tarifas
+        if (multipleRatesWarning) {
+            multipleRatesWarning.style.display = rateAnalysis.hasMultipleRates ? "block" : "none";
+        }
+
+        // Actualizar placeholder y hint
+        if (rateAnalysis.weightedAverage > 0) {
+            customRateInput.placeholder = formatMoneyPrecise(rateAnalysis.weightedAverage);
+            if (customRateHint && rateAnalysis.hasMultipleRates) {
+                customRateHint.textContent = `Promedio ponderado: ${formatMoneyPrecise(rateAnalysis.weightedAverage)}/h`;
+            }
+        }
+
+        // Si hay un valor personalizado en el estado, mostrarlo
+        if (state.customSummaryRate !== null && state.customSummaryRate !== undefined) {
+            customRateInput.value = state.customSummaryRate;
+        } else {
+            customRateInput.value = "";
+        }
+    }
+
     const hourlyEntries = getHourlyEntries(totals, false, state, false, catalog.rates.sinIa);
     renderHourlyList(hourlyEntries);
 
-    renderBreakdown(totals, disabledSet, state);
+    renderBreakdown(totals, state);
 }
 
 
-function renderBreakdown(totals, disabledSet, state) {
+function renderBreakdown(totals, state) {
     if (refs.breakdownSetup) refs.breakdownSetup.innerHTML = "";
     if (refs.breakdownMonthly) refs.breakdownMonthly.innerHTML = "";
     totals.breakdown.forEach((item) => {
@@ -274,29 +336,6 @@ function renderBreakdown(totals, disabledSet, state) {
         li.className = "breakdown-card";
         if (!item.disabled) li.classList.add("enabled");
         else li.classList.add("breakdown-card-disabled");
-
-        if (item.disabled && !(item.removable && !disabledSet.has(componentKey(item.removable.type, item.removable.id)))) {
-            // If disabled completely (not just removable-hidden), don't show or show faded?
-            // The legacy logic showed it if !disabled OR if it was a removable that was active.
-            // Actually the legacy logic was: li.classList.toggle("breakdown-card-disabled", !enabled);
-            // where enabled = !item.disabled. And if removable, check disabledSet.
-            // Let's stick to simple: if disabled and not hidden by user, show as disabled.
-            // If hidden by user (remove btn), it's hidden.
-        }
-
-        // Logic for visibility
-        let isVisible = !item.disabled;
-        if (item.removable) {
-            const key = componentKey(item.removable.type, item.removable.id);
-            isVisible = !disabledSet.has(key);
-        }
-
-        if (!isVisible) {
-            li.style.display = "none";
-            const targetList = item.category === "monthly" ? refs.breakdownMonthly : refs.breakdownSetup;
-            if (targetList) targetList.appendChild(li);
-            return;
-        }
 
         // --- Layout Container ---
         // Left: Info (Title + Details)
@@ -316,6 +355,10 @@ function renderBreakdown(totals, disabledSet, state) {
         } else {
             if (item.hours) details.push(`${item.hours} h`);
             if (item.hourly) details.push(`${formatMoneyPrecise(item.hourly)}/h`);
+            // Para componentes mensuales (como sessionPackage), mostrar costo de sesión adicional
+            if (item.category === "monthly" && item.extraCost !== null && item.extraCost !== undefined) {
+                details.push(`Sesión adicional: ${formatMoneyPrecise(item.extraCost)}`);
+            }
         }
         if (details.length) {
             const detailEl = document.createElement("div");
@@ -356,12 +399,19 @@ function renderBreakdown(totals, disabledSet, state) {
         priceInput.min = "0";
         priceInput.step = "50";
         priceInput.value = item.value;
+        // Add data attributes for save handler
+        if (item.removable) {
+            console.log(item.removable)
+            priceInput.dataset.componentType = item.removable.type;
+            priceInput.dataset.componentId = item.removable.id ?? "default";
+            priceInput.dataset.category = item.category; // 'setup' or 'monthly'
+        }
         inputContainer.appendChild(priceInput);
 
         const saveBtn = document.createElement("button");
         saveBtn.className = "breakdown-save-btn";
         saveBtn.textContent = "✓";
-        saveBtn.dataset.action = "save-price";
+        saveBtn.dataset.action = "save-edit";
         inputContainer.appendChild(saveBtn); // Event listener handles click via bubble
 
         const cancelBtn = document.createElement("button");

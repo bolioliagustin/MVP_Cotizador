@@ -1,0 +1,232 @@
+/* ============================================ */
+/* Modal Styles for AI Proposal Generator */
+/* ============================================ */
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    /* Increased for better spacing from screen edges */
+}
+
+.modal-content {
+    background-color: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+    padding: 20px;
+    /* Spacing between modal edge and content */
+}
+
+.modal.large .modal-content {
+    max-width: 800px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 32px 40px;
+    /* Increased for consistency */
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+}
+
+.close-modal:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.modal-body {
+    padding: 40px;
+    /* Increased for better visual spacing */
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    padding: 24px 40px;
+    /* Increased horizontal padding for consistency */
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+}
+
+/* Form Styles - More specific selectors */
+#proposal-modal .form-group,
+#proposal-result-modal .form-group,
+.modal .form-group {
+    margin-bottom: 30px !important;
+    /* Increased for better visual separation */
+}
+
+#proposal-modal .form-group label,
+#proposal-result-modal .form-group label,
+.modal .form-group label {
+    display: block;
+    margin-bottom: 10px !important;
+    /* Increased from 8px */
+    font-weight: 500;
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+#proposal-modal .form-group input,
+#proposal-modal .form-group select,
+#proposal-modal .form-group textarea,
+.modal .form-group input,
+.modal .form-group select,
+.modal .form-group textarea {
+    width: 100%;
+    padding: 14px 16px !important;
+    /* Increased padding for better touch targets */
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: var(--surface-raised) !important;
+    color: var(--text) !important;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+/* Dark background for select dropdowns - VERY SPECIFIC */
+#proposal-modal .form-group select,
+#proposal-modal select,
+.modal select {
+    background-color: var(--surface-raised) !important;
+    color: var(--text) !important;
+    cursor: pointer;
+    appearance: none;
+    color-scheme: dark !important;
+    /* Forces browser to use dark theme for dropdown */
+
+    /* Custom dropdown arrow */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    padding-right: 40px !important;
+}
+
+/* Select dropdown options styling */
+#proposal-modal .form-group select option,
+#proposal-modal select option,
+.modal select option {
+    background-color: var(--surface-raised) !important;
+    color: var(--text) !important;
+    padding: 8px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.7;
+}
+
+/* Add visual separation between form groups */
+.form-group+.form-group {
+    margin-top: 24px;
+}
+
+/* Proposal View Styles */
+.proposal-view {
+    line-height: 1.8;
+    color: var(--text);
+    font-size: 1rem;
+}
+
+.proposal-view strong {
+    color: var(--primary);
+}
+
+.proposal-view[contenteditable="true"] {
+    padding: 12px;
+    border-radius: var(--radius);
+}
+
+/* Secondary Button Style */
+.btn.secondary {
+    background-color: var(--primary-dark);
+    color: white;
+}
+
+.btn.secondary:hover {
+    background-color: var(--primary);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+    .modal-content {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+}

@@ -154,6 +154,23 @@
     border-color: #ef4444;
 }
 
+/* Toggle visibility based on editing state */
+.breakdown-card.editing .breakdown-price-amount {
+    display: none !important;
+}
+
+.breakdown-card .breakdown-price-input-container {
+    display: none;
+}
+
+.breakdown-card.editing .breakdown-price-input-container {
+    display: flex !important;
+}
+
+.breakdown-card.editing .breakdown-controls {
+    display: none !important;
+}
+
 @media (max-width: 500px) {
     .breakdown-card {
         flex-direction: column;

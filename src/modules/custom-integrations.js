@@ -2,7 +2,6 @@ import { refs } from "./ui.js";
 import { catalog } from "../data/catalog.js";
 import { formatMoney, formatMoneyPrecise } from "../lib/format.js";
 import { coerceNumberInput, generateId } from "../lib/utils.js";
-import { aiService } from "../services/ai.js";
 
 export function renderCustomIntegrations(store) {
     if (!refs.customIntegrationList) return;
@@ -215,42 +214,6 @@ export function resetCustomIntegrationForm() {
     if (refs.customIntegrationOverride) refs.customIntegrationOverride.value = "";
     if (refs.customIntegrationLabor) refs.customIntegrationLabor.value = "sinIa";
     updateCustomIntegrationPreview();
-
-    // Ensure Estimate button exists
-    if (!document.getElementById("estimate-btn") && refs.customIntegrationName) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.id = "estimate-btn";
-        btn.className = "btn-secondary";
-        btn.textContent = "✨ Estimar con IA";
-        btn.style.marginTop = "8px";
-        btn.onclick = async () => {
-            const desc = refs.customIntegrationName.value;
-            if (!desc) {
-                alert("Por favor describe la integracion primero.");
-                return;
-            }
-            if (!aiService.hasKey()) {
-                alert("Por favor configura tu API Key primero (icono de engranaje).");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "Estimando...";
-            try {
-                const hours = await aiService.estimateEffort(desc);
-                refs.customIntegrationHours.value = hours;
-                updateCustomIntegrationPreview();
-            } catch (e) {
-                alert("Error al estimar: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "✨ Estimar con IA";
-            }
-        };
-        // Insert after name input
-        refs.customIntegrationName.parentNode.insertBefore(btn, refs.customIntegrationName.nextSibling);
-    }
 }
 
 function setCustomIntegrationFormError(message) {

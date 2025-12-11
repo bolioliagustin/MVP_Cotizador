@@ -1,6 +1,6 @@
 import { catalog, sessionPackages, sessionModels } from "../../data/catalog.js";
-import { formatMoney, formatMoneyPrecise } from "../../lib/format.js";
-import { aiService } from "../../services/ai.js";
+import { formatMoney, formatMoneyPrecise, formatMessageCost } from "../../lib/format.js";
+import { messageCosts } from "../../data/catalog.js";
 
 export function renderProposalSheet(state, totals, hourlyEntries, currentRate) {
     const partner = catalog.partners.find((item) => item.id === state.partner) ?? catalog.partners[0];
@@ -15,10 +15,17 @@ export function renderProposalSheet(state, totals, hourlyEntries, currentRate) {
     header.appendChild(logo);
     const title = document.createElement("div");
     title.className = "proposal-sheet-title";
-    const date = new Date().toLocaleDateString();
+    const date = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     title.innerHTML = `<strong>Cotizacion HeyNow</strong><br/><span>${date}</span>`;
     header.appendChild(title);
     sheet.appendChild(header);
+
+    // Calcular el costo de sesión adicional
+    const sessionPkg = sessionPackages.find((pkg) => pkg.id === state.sessionPackage);
+    const sessionExtraLabel =
+        sessionPkg && sessionPkg.extraCost !== null && sessionPkg.extraCost !== undefined
+            ? `Sesión adicional: ${formatMoneyPrecise(sessionPkg.extraCost)} + Impuestos`
+            : null;
 
     const summaryGrid = document.createElement("div");
     summaryGrid.className = "proposal-summary-grid";
@@ -26,7 +33,7 @@ export function renderProposalSheet(state, totals, hourlyEntries, currentRate) {
         createSummaryCard("Pago único", formatMoney(totals.setupMargin), "+ Impuestos", { noteClass: "summary-inline-note subtle" })
     );
     summaryGrid.appendChild(
-        createSummaryCard("Pago mensual", formatMoney(totals.monthlyMargin), "+ Impuestos", { noteClass: "summary-inline-note subtle" })
+        createSummaryCard("Pago mensual", formatMoney(totals.monthlyMargin), sessionExtraLabel || "+ Impuestos", { noteClass: "summary-inline-note subtle" })
     );
     summaryGrid.appendChild(
         createSummaryCard(
@@ -38,97 +45,36 @@ export function renderProposalSheet(state, totals, hourlyEntries, currentRate) {
     );
     sheet.appendChild(summaryGrid);
 
-    const sessionPkg = sessionPackages.find((pkg) => pkg.id === state.sessionPackage);
-    const sessionExtraLabel =
+    const sessionExtraTableLabel =
         sessionPkg && sessionPkg.extraCost !== null && sessionPkg.extraCost !== undefined
-            ? `${formatMoneyPrecise(sessionPkg.extraCost)}/sesión`
+            ? `${formatMoneyPrecise(sessionPkg.extraCost)}`
             : "-";
 
 
     sheet.appendChild(buildCostTable("Costos de implementación - Pago único al inicio del proyecto", totals, partner, "setup"));
-    sheet.appendChild(
-        buildCostTable("Costos de uso - Pago mensual", totals, partner, "monthly", {
-            label: "Sesión adicional",
-            value: sessionExtraLabel,
-        })
-    );
+
+    // Solo mostrar tabla mensual si hay componentes mensuales
+    const hasMonthlyComponents = totals.breakdown.some(item => item.category === "monthly" && !item.disabled);
+    if (hasMonthlyComponents) {
+        sheet.appendChild(
+            buildCostTable("Costos de uso - Pago mensual", totals, partner, "monthly", {
+                label: "Sesión adicional",
+                value: sessionExtraTableLabel,
+            })
+        );
+    }
+
+    // Tabla de costos de mensajes (si está seleccionado)
+    if (state.messageRegion) {
+        const selectedRegion = messageCosts.find(r => r.id === state.messageRegion);
+        if (selectedRegion && selectedRegion.marketing !== null) {
+            sheet.appendChild(buildMessageCostsTable(selectedRegion));
+        }
+    }
 
     const footer = document.createElement("div");
     footer.className = "proposal-footer";
     sheet.appendChild(footer);
-
-    // AI Proposal Section
-    const aiSection = document.createElement("div");
-    aiSection.className = "proposal-ai-section";
-    aiSection.style.marginTop = "20px";
-    aiSection.style.padding = "15px";
-    aiSection.style.backgroundColor = "#f9fafb";
-    aiSection.style.borderRadius = "8px";
-    aiSection.style.border = "1px dashed #d1d5db";
-
-    const aiBtn = document.createElement("button");
-    aiBtn.className = "btn-secondary small";
-    aiBtn.textContent = "✨ Generar Propuesta con IA";
-    aiBtn.onclick = async () => {
-        const errorEl = aiSection.querySelector(".ai-error-msg");
-        if (errorEl) errorEl.remove();
-
-        if (!aiService.hasKey()) {
-            showInlineError(aiSection, "⚠️ Configura tu API Key primero (⚙️).");
-            return;
-        }
-
-        const originalText = aiBtn.textContent;
-        aiBtn.disabled = true;
-        aiBtn.innerHTML = `
-            <span class="spinner">⏳</span> Generando...
-        `;
-
-        try {
-            const context = {
-                implementation: catalog.implementations.find(i => i.id === state.implementation)?.name || "",
-                integrations: catalog.integrations.find(i => i.id === state.integrations)?.label || "",
-                extras: [...state.implementationExtras, ...state.addons].map(id =>
-                    [...catalog.implementationExtras, ...catalog.addons].find(i => i.id === id)?.name
-                ).filter(Boolean),
-                sessionModel: sessionModels.find(m => m.id === state.sessionModel)?.label || ""
-            };
-            const text = await aiService.generateProposal(context);
-
-            const textContainer = document.createElement("div");
-            textContainer.className = "proposal-ai-text";
-            textContainer.style.marginTop = "10px";
-            textContainer.style.whiteSpace = "pre-line";
-            textContainer.style.fontSize = "0.9rem";
-            textContainer.style.color = "#374151";
-            textContainer.innerHTML = text;
-
-            aiSection.innerHTML = "";
-            aiSection.appendChild(document.createElement("h4")).textContent = "Propuesta Comercial";
-            aiSection.lastChild.style.marginBottom = "8px";
-            aiSection.appendChild(textContainer);
-        } catch (e) {
-            console.error(e);
-            aiBtn.disabled = false;
-            aiBtn.textContent = originalText;
-            showInlineError(aiSection, "❌ Error al generar: " + e.message);
-        }
-    };
-
-    function showInlineError(container, msg) {
-        let p = container.querySelector(".ai-error-msg");
-        if (!p) {
-            p = document.createElement("p");
-            p.className = "ai-error-msg";
-            p.style.color = "#dc2626";
-            p.style.fontSize = "0.85rem";
-            p.style.marginTop = "8px";
-            container.appendChild(p);
-        }
-        p.textContent = msg;
-    }
-    aiSection.appendChild(aiBtn);
-    sheet.appendChild(aiSection);
 
     return sheet;
 }
@@ -207,6 +153,49 @@ function buildCostTable(title, totals, partner, category, extraColumn) {
 
     table.appendChild(tbody);
     tableContainer.appendChild(table);
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    return tableContainer;
+}
+
+function buildMessageCostsTable(region) {
+    const tableContainer = document.createElement("div");
+    const heading = document.createElement("h4");
+    heading.textContent = `Costos de mensajes salientes WhatsApp - ${region.region}`;
+    heading.style.marginBottom = "8px";
+    heading.style.textTransform = "uppercase";
+    heading.style.letterSpacing = "0.18em";
+    heading.style.fontSize = "0.78rem";
+    heading.style.color = "#6b7280";
+    tableContainer.appendChild(heading);
+
+    const table = document.createElement("table");
+    table.className = "proposal-breakdown-table";
+    table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Tipo de mensaje</th>
+        <th>Costo por mensaje (USD)</th>
+      </tr>
+    </thead>
+  `;
+    const tbody = document.createElement("tbody");
+
+    const rows = [
+        { label: "Marketing", value: region.marketing },
+        { label: "Utilidad / Servicio", value: region.utility },
+        { label: "Autenticación", value: region.authentication }
+    ];
+
+    rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+        <td>${row.label}</td>
+        <td>US$ ${formatMessageCost(row.value).replace('US$', '').trim()}</td>
+      `;
+        tbody.appendChild(tr);
+    });
+
     table.appendChild(tbody);
     tableContainer.appendChild(table);
     return tableContainer;

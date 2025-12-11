@@ -19,7 +19,10 @@
     "vitest": "^1.6.0"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
+    "@google/genai": "^1.32.0",
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.87.1",
+    "file-saver": "^2.0.5",
     "html-to-image": "^1.11.11"
   }
 }

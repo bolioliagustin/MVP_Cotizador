@@ -1,230 +1,497 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cotizador HeyNow</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div class="app-shell">
-      <header class="hero">
-        <div class="hero-info">
-          <div class="hero-brand">
-            <img
-              src="/assets/images/heynow-negro-largo.avif"
-              alt="HeyNow IA"
-              class="hero-logo hero-logo-primary"
-              loading="lazy"
-            />
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotizador HeyNow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-info">
+        <div class="hero-brand">
+          <img src="/assets/images/heynow-negro-largo.avif" alt="HeyNow IA" class="hero-logo hero-logo-primary"
+            loading="lazy" />
+        </div>
+        <h2>Cotizador v1.0</h2>
+        <p>Selecciona el punto de partida, add-ons, integraciones y costos mensuales. Tamien puedes generar propuestas
+          con IA.</p>
+      </div>
+      <div class="actions">
+        <input type="file" id="import-json-input" accept=".json,application/json" style="display: none;" />
+
+        <!-- File Operations Group -->
+        <div class="action-group">
+          <button id="reset-btn" class="btn ghost btn-sm">🔄 Borrar</button>
+          <button id="import-json-btn" class="btn ghost btn-sm">📁 Importar</button>
+          <button id="export-json-btn" class="btn primary btn-sm">💾 Exportar</button>
+        </div>
+
+        <!-- AI & Export Group -->
+        <div class="action-group">
+          <button id="generate-proposal-btn" class="btn secondary btn-sm">✨ Generar Propuesta</button>
+          <button id="print-btn" class="btn primary btn-sm">✅ Imprimir</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="quote-layout">
+      <div class="stack">
+        <section class="card" aria-labelledby="implementacion-label">
+          <h2 id="implementacion-label">Implementacion base</h2>
+          <p class="state-info">Selecciona el punto de partida del proyecto.</p>
+          <label for="implementation">Opcion</label>
+          <select id="implementation"></select>
+          <div class="info-pill" id="implementation-info">
+            <p><strong>Precio:</strong> <span id="implementation-info-cost">$0</span></p>
+            <p><strong>Horas:</strong> <span id="implementation-info-hours">0 h</span></p>
+            <p><strong>Valor hora:</strong> <span id="implementation-info-rate">-</span></p>
           </div>
-          <h1>Cotizador rapido</h1>
-          <p>
-            Arma propuestas visuales y consistentes en minutos. Ajusta horas, margenes y paquetes sin perder claridad.
+        </section>
+
+        <section class="card" aria-labelledby="extras-label">
+          <h2 id="extras-label">Automatismos y add-ons</h2>
+          <p class="state-info">Activa automatismos prearmados o add-ons IA segun el alcance.</p>
+          <div class="card-grid">
+            <div>
+              <label class="label" for="implementation-extras">Automatismos</label>
+              <div id="implementation-extras" class="options grid"></div>
+            </div>
+            <div>
+              <label class="label" for="addons">Add-ons IA</label>
+              <div id="addons" class="options grid"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="integraciones-label">
+          <h2 id="integraciones-label">Integraciones catalogo</h2>
+          <p class="state-info">Casos de uso con automatizacion conectada.</p>
+          <label for="integrations">Casos automatizados</label>
+          <select id="integrations"></select>
+          <div class="toggle-row" style="margin-top: 12px">
+            <span class="state-info" id="integration-rate-label">Costo sin IA</span>
+            <label class="switch">
+              <input type="checkbox" id="integration-rate-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="info-pill" id="integrations-info">
+            <p><strong>Precio:</strong> <span id="integration-info-cost">$0</span></p>
+            <p><strong>Horas:</strong> <span id="integration-info-hours">0 h</span></p>
+            <p><strong>Valor hora:</strong> <span id="integration-info-rate">-</span></p>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="costos-mensuales-label">
+          <h2 id="costos-mensuales-label">Costo mensual</h2>
+          <div class="monthly-grid">
+            <div class="monthly-block">
+              <h3>Paquetes de sesiones</h3>
+              <label for="session-model">Modelo IA</label>
+              <select id="session-model"></select>
+              <p class="state-info" id="session-model-info"></p>
+
+              <label for="session-package">Paquete de sesiones</label>
+              <select id="session-package"></select>
+              <p class="state-info" id="session-package-info"></p>
+            </div>
+            <div class="monthly-block">
+              <h3>Licenciamiento Hey BI</h3>
+              <p class="state-info">
+                Selecciona el paquete de BI segun el volumen de sesiones que requiera el cliente.
+              </p>
+              <label for="heybi-plan">Paquete Hey BI</label>
+              <select id="heybi-plan"></select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Costos de mensajes salientes WhatsApp -->
+        <section class="card" aria-labelledby="message-costs-label">
+          <h2 id="message-costs-label">Costos de mensajes salientes (WhatsApp)</h2>
+          <p class="state-info">
+            Selecciona la región para ver los costos por mensaje según el tipo.
           </p>
+          <label for="message-region">Región</label>
+          <select id="message-region">
+            <option value="">Seleccionar región...</option>
+          </select>
+
+          <!-- Tabla de precios (aparece al seleccionar) -->
+          <div id="message-costs-table" style="display: none; margin-top: 16px;">
+            <table style="
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 0.9rem;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              overflow: hidden;
+            ">
+              <thead style="background: rgba(255, 255, 255, 0.05);">
+                <tr>
+                  <th
+                    style="padding: 10px; text-align: left; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--muted);">
+                    Tipo</th>
+                  <th
+                    style="padding: 10px; text-align: right; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--muted);">
+                    Costo (USD)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">Marketing</td>
+                  <td id="message-cost-marketing"
+                    style="padding: 10px; text-align: right; font-weight: 600; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+                    -</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">Utilidad</td>
+                  <td id="message-cost-utility"
+                    style="padding: 10px; text-align: right; font-weight: 600; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+                    -</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">Autenticación</td>
+                  <td id="message-cost-authentication"
+                    style="padding: 10px; text-align: right; font-weight: 600; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+                    -</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="custom-integration-label">
+          <h2 id="custom-integration-label">Integracion personalizada</h2>
+          <p class="state-info">Crea integraciones manuales y ajusta sus tarifas.</p>
+          <div class="custom-integrations">
+            <form id="custom-integration-form" class="custom-form" novalidate>
+              <div class="manual-grid">
+                <div>
+                  <label for="custom-integration-name">Nombre</label>
+                  <input type="text" id="custom-integration-name" placeholder="Nombre del automatismo" />
+                </div>
+                <div>
+                  <label for="custom-integration-hours">Horas</label>
+                  <input type="number" id="custom-integration-hours" min="0" step="1" placeholder="0" />
+                </div>
+                <div>
+                  <label for="custom-integration-labor">Clasificacion</label>
+                  <select id="custom-integration-labor">
+                    <option value="sinIa">Sin IA</option>
+                    <option value="ia">IA</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="custom-integration-rate">Valor hora</label>
+                  <input type="number" id="custom-integration-rate" min="0" step="5" placeholder="Auto" />
+                </div>
+                <div>
+                  <label for="custom-integration-override">Precio manual</label>
+                  <input type="number" id="custom-integration-override" min="0" step="50" placeholder="Auto" />
+                </div>
+                <div style="display: flex; align-items: end;">
+                  <button type="submit" class="btn ghost" id="add-custom-integration"
+                    style="border-radius: 8px; width: 100%;">Agregar al resumen</button>
+                </div>
+              </div>
+              <p id="custom-integration-error" class="form-error" aria-live="polite"></p>
+            </form>
+            <div class="custom-form-preview">
+              <div class="custom-preview">
+                <h3>Vista previa</h3>
+                <div class="custom-preview-card">
+                  <p id="custom-preview-empty" class="state-info">Completa el formulario para ver detalles.</p>
+                  <div id="custom-preview-details" class="custom-preview-details" hidden>
+                    <p><span class="label-inline">Nombre</span><strong id="custom-preview-name">-</strong></p>
+                    <p>
+                      <span class="label-inline">Horas</span><span id="custom-preview-hours" class="value-inline">0
+                        h</span>
+                    </p>
+                    <p>
+                      <span class="label-inline">Clasificacion</span><span id="custom-preview-labor"
+                        class="value-inline">Sin IA</span>
+                    </p>
+                    <p>
+                      <span class="label-inline">Valor hora</span><span id="custom-preview-rate"
+                        class="value-inline">$0</span>
+                    </p>
+                    <p>
+                      <span class="label-inline">Precio estimado</span><span id="custom-preview-total"
+                        class="value-inline">$0</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="partner-label">
+          <h2 id="partner-label">Partner / margen</h2>
+          <p class="state-info">Define el perfil que determina el markup final.</p>
+          <label for="partner">Perfil</label>
+          <select id="partner"></select>
+        </section>
+      </div>
+
+      <aside class="sidebar">
+        <section class="summary" aria-live="polite">
+          <h3>Resumen</h3>
+          <div class="summary-breakdown" id="breakdown-section">
+            <h4>Detalle de componentes</h4>
+            <div class="breakdown-group">
+              <h5>Setup</h5>
+              <ul id="breakdown-setup" class="breakdown-list"></ul>
+            </div>
+            <div class="breakdown-group">
+              <h5>Mensual</h5>
+              <ul id="breakdown-monthly" class="breakdown-list"></ul>
+            </div>
+          </div>
+
+          <div class="summary-metrics">
+            <div class="metric-row">
+              <div class="metric-title">Setup lista</div>
+              <div class="metric-value" id="setup-total">$0</div>
+              <div class="metric-note">Con margen: <span id="setup-margin">$0</span></div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-title">Mensual lista</div>
+              <div class="metric-value" id="monthly-total">$0</div>
+              <div class="metric-note">Con margen: <span id="monthly-margin">$0</span></div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-title">Horas</div>
+              <div class="metric-value" id="hours-total">0 h</div>
+            </div>
+
+            <!-- Tarifa personalizada para resumen -->
+            <div class="metric-row" id="custom-rate-section"
+              style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <div class="metric-title" style="margin: 0;">Tarifa para resumen</div>
+                <div id="multiple-rates-warning" style="display: none;">
+                  <span style="
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 4px;
+                      padding: 2px 8px;
+                      background: rgba(251, 191, 36, 0.15);
+                      border: 1px solid rgba(251, 191, 36, 0.3);
+                      border-radius: 12px;
+                      font-size: 0.7rem;
+                      color: #fbbf24;
+                      font-weight: 500;
+                    ">
+                    ⚠️ Múltiples tarifas
+                  </span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="number" id="custom-summary-rate-input" placeholder="Auto" min="0" step="0.01" style="
+                      width: 120px;
+                      padding: 8px 12px;
+                      border-radius: 8px;
+                      border: 1px solid rgba(255, 255, 255, 0.12);
+                      background: rgba(255, 255, 255, 0.05);
+                      color: var(--text);
+                      font-size: 0.9rem;
+                      font-weight: 600;
+                    " />
+                <span style="color: var(--muted); font-size: 0.85rem;">/h</span>
+              </div>
+              <small id="custom-rate-hint"
+                style="display: block; margin-top: 4px; color: var(--muted); font-size: 0.75rem;">
+                Se usa en la imagen exportada
+              </small>
+            </div>
+          </div>
+          <div class="summary-breakdown summary-large">
+            <h4>Tarifas aplicadas</h4>
+            <ul id="hourly-list" class="hourly-list"></ul>
+          </div>
+        </section>
+
+        <!-- Quotes History Section -->
+        <section class="card" id="quotes-history-section" style="margin-top: 24px;">
+          <h3>📚 Historial</h3>
+
+          <div style="margin-bottom: 16px;">
+            <input type="text" id="quotes-search" placeholder="🔍 Buscar cliente..."
+              style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-raised); color: var(--text);" />
+          </div>
+
+          <div id="quotes-list"
+            style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;">
+            <!-- Quotes will be loaded here dynamically -->
+            <div style="text-align: center; padding: 20px; color: var(--muted);">
+              <p>Cargando...</p>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div id="proposal-preview" class="proposal-preview" aria-hidden="true"></div>
+
+  <!-- Modal: AI Proposal Generator Form -->
+  <div id="proposal-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Generar Propuesta con IA</h3>
+        <button class="close-modal" id="close-proposal-modal">×</button>
+      </div>
+
+      <form id="proposal-form">
+        <div class="form-group">
+          <label for="client-name">Nombre del Cliente/Empresa *</label>
+          <input type="text" id="client-name" required placeholder="Ej: SANNA Clínicas" />
         </div>
-        <div class="actions">
-          <button id="reset-btn" class="btn ghost">Limpiar</button>
-          <button id="export-json-btn" class="btn ghost">Descargar JSON</button>
-          <button id="print-btn" class="btn primary">Imprimir / PDF</button>
+
+        <div class="form-group">
+          <label for="client-industry">Industria/Sector *</label>
+          <select id="client-industry" required>
+            <option value="">Seleccionar...</option>
+            <option value="salud">Salud</option>
+            <option value="retail">Retail/Comercio</option>
+            <option value="finanzas">Finanzas</option>
+            <option value="educacion">Educación</option>
+            <option value="tecnologia">Tecnología</option>
+            <option value="manufactura">Manufactura</option>
+            <option value="servicios">Servicios</option>
+            <option value="otro">Otro</option>
+          </select>
         </div>
-      </header>
 
-      <div class="quote-layout">
-        <div class="stack">
-          <section class="card" aria-labelledby="implementacion-label">
-            <h2 id="implementacion-label">Implementacion base</h2>
-            <p class="state-info">Selecciona el punto de partida del proyecto.</p>
-            <label for="implementation">Opcion</label>
-            <select id="implementation"></select>
-            <div class="info-pill" id="implementation-info">
-              <p id="implementation-info-name">Selecciona una opcion para ver detalles.</p>
-              <p><strong>Precio:</strong> <span id="implementation-info-cost">$0</span></p>
-              <p><strong>Horas:</strong> <span id="implementation-info-hours">0 h</span></p>
-              <p><strong>Valor hora:</strong> <span id="implementation-info-rate">-</span></p>
-            </div>
-          </section>
+        <div class="form-group">
+          <label for="client-objective">Objetivo Principal *</label>
+          <textarea id="client-objective" rows="2" required
+            placeholder="Ej: Automatizar atención al cliente vía WhatsApp para reducir carga del equipo de soporte"></textarea>
+        </div>
 
-          <section class="card" aria-labelledby="extras-label">
-            <h2 id="extras-label">Automatismos y add-ons</h2>
-            <p class="state-info">Activa automatismos prearmados o add-ons IA segun el alcance.</p>
-            <div class="card-grid">
-              <div>
-                <label class="label" for="implementation-extras">Automatismos</label>
-                <div id="implementation-extras" class="options grid"></div>
-              </div>
-              <div>
-                <label class="label" for="addons">Add-ons IA</label>
-                <div id="addons" class="options grid"></div>
-              </div>
-            </div>
-          </section>
+        <div class="form-group">
+          <label for="use-case-description">Descripción del Caso de Uso *</label>
+          <textarea id="use-case-description" rows="4" required
+            placeholder="Ej: Mesa de ayuda interna para empleados. Responder preguntas frecuentes sobre IT, RRHH y procedimientos internos. Permitir agendamiento de citas con RRHH."></textarea>
+        </div>
 
-          <section class="card" aria-labelledby="integraciones-label">
-            <h2 id="integraciones-label">Integraciones catalogo</h2>
-            <p class="state-info">Casos de uso con automatizacion conectada.</p>
-            <label for="integrations">Casos automatizados</label>
-            <select id="integrations"></select>
-            <div class="toggle-row" style="margin-top: 12px">
-              <span class="state-info" id="integration-rate-label">Costo sin IA</span>
-              <label class="switch">
-                <input type="checkbox" id="integration-rate-toggle" />
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="info-pill" id="integrations-info">
-              <p id="integrations-info-label">Selecciona una opcion.</p>
-              <p><strong>Precio:</strong> <span id="integration-info-cost">$0</span></p>
-              <p><strong>Horas:</strong> <span id="integration-info-hours">0 h</span></p>
-              <p><strong>Valor hora:</strong> <span id="integration-info-rate">-</span></p>
-            </div>
-          </section>
+        <div class="form-group">
+          <label for="agent-type">Tipo de Agente IA *</label>
+          <select id="agent-type" required>
+            <option value="">Seleccionar...</option>
+            <option value="estatico">Estático (Base de conocimiento)</option>
+            <option value="integracion">Con Integraciones</option>
+            <option value="hibrido">Híbrido (Ambos)</option>
+          </select>
+        </div>
 
-          <section class="card" aria-labelledby="costos-mensuales-label">
-            <h2 id="costos-mensuales-label">Costo mensual</h2>
-            <div class="monthly-grid">
-              <div class="monthly-block">
-                <h3>Paquetes de sesiones</h3>
-                <label for="session-model">Modelo IA</label>
-                <select id="session-model"></select>
-                <p class="state-info" id="session-model-info"></p>
+        <div class="form-group" id="knowledge-sources-group" style="display:none;">
+          <label for="knowledge-sources">Fuentes de Conocimiento (opcional)</label>
+          <textarea id="knowledge-sources" rows="2"
+            placeholder="Ej: PDFs de políticas internas, FAQ del sitio web, documentos de procedimientos, scraping de portal de empleados"></textarea>
+        </div>
 
-                <label for="session-package">Paquete de sesiones</label>
-                <select id="session-package"></select>
-                <p class="state-info" id="session-package-info"></p>
-              </div>
-              <div class="monthly-block">
-                <h3>Licenciamiento Hey BI</h3>
-                <p class="state-info">
-                  Selecciona el paquete de BI segun el volumen de sesiones que requiera el cliente.
-                </p>
-                <label for="heybi-plan">Paquete Hey BI</label>
-                <select id="heybi-plan"></select>
-              </div>
-            </div>
-          </section>
+        <div class="form-group" id="integration-systems-group" style="display:none;">
+          <label for="integration-systems">Sistemas/Servicios a Integrar (opcional)</label>
+          <textarea id="integration-systems" rows="2"
+            placeholder="Ej: Salesforce CRM, API de inventario, sistema de agendamiento, base de datos de clientes"></textarea>
+        </div>
 
-          <section class="card" aria-labelledby="partner-label">
-            <h2 id="partner-label">Partner / margen</h2>
-            <p class="state-info">Define el perfil que determina el markup final.</p>
-            <label for="partner">Perfil</label>
-            <select id="partner"></select>
-          </section>
+        <div class="form-group" id="data-required-group" style="display:none;">
+          <label for="data-required">Datos a Solicitar al Usuario (opcional)</label>
+          <textarea id="data-required" rows="2"
+            placeholder="Ej: DNI/RUT, número de cliente, fecha preferida, tipo de consulta"></textarea>
+        </div>
 
-          <section class="card" aria-labelledby="custom-integration-label">
-            <h2 id="custom-integration-label">Integracion personalizada</h2>
-            <p class="state-info">Crea multiples automatismos manuales y ajusta sus tarifas.</p>
-            <div class="custom-integrations">
-              <form id="custom-integration-form" class="custom-form" novalidate>
-                <div class="manual-grid">
-                  <div>
-                    <label for="custom-integration-name">Nombre</label>
-                    <input type="text" id="custom-integration-name" placeholder="Nombre del automatismo" />
-                  </div>
-                  <div>
-                    <label for="custom-integration-hours">Horas</label>
-                    <input type="number" id="custom-integration-hours" min="0" step="1" placeholder="0" />
-                  </div>
-                  <div>
-                    <label for="custom-integration-labor">Clasificacion</label>
-                    <select id="custom-integration-labor">
-                      <option value="sinIa">Sin IA</option>
-                      <option value="ia">IA</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label for="custom-integration-rate">Valor hora</label>
-                    <input type="number" id="custom-integration-rate" min="0" step="5" placeholder="Auto" />
-                    <small class="state-info">Deja vacio para usar la tarifa segun clasificacion.</small>
-                  </div>
-                  <div>
-                    <label for="custom-integration-override">Precio manual (opcional)</label>
-                    <input type="number" id="custom-integration-override" min="0" step="50" placeholder="Auto" />
-                  </div>
-                </div>
-                <div class="custom-form-actions">
-                  <p id="custom-integration-error" class="form-error" aria-live="polite"></p>
-                  <button type="submit" class="btn ghost small" id="add-custom-integration">Agregar al resumen</button>
-                </div>
-              </form>
-              <div class="custom-form-preview">
-                <div class="custom-preview">
-                  <h3>Vista previa</h3>
-                  <div class="custom-preview-card">
-                    <p id="custom-preview-empty" class="state-info">Completa el formulario para ver detalles.</p>
-                    <div id="custom-preview-details" class="custom-preview-details" hidden>
-                      <p><span class="label-inline">Nombre</span><strong id="custom-preview-name">-</strong></p>
-                      <p>
-                        <span class="label-inline">Horas</span
-                        ><span id="custom-preview-hours" class="value-inline">0 h</span>
-                      </p>
-                      <p>
-                        <span class="label-inline">Clasificacion</span
-                        ><span id="custom-preview-labor" class="value-inline">Sin IA</span>
-                      </p>
-                      <p>
-                        <span class="label-inline">Valor hora</span
-                        ><span id="custom-preview-rate" class="value-inline">$0</span>
-                      </p>
-                      <p>
-                        <span class="label-inline">Precio estimado</span
-                        ><span id="custom-preview-total" class="value-inline">$0</span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section></div>
+        <div class="form-group">
+          <label for="expected-volume">Volumen Esperado</label>
+          <select id="expected-volume">
+            <option value="">No especificado</option>
+            <option value="bajo">Bajo (&lt; 1,000 conv/mes)</option>
+            <option value="medio">Medio (1K - 10K conv/mes)</option>
+            <option value="alto">Alto (10K - 50K conv/mes)</option>
+            <option value="muy-alto">Muy Alto (&gt; 50K conv/mes)</option>
+          </select>
+        </div>
 
-        <aside class="sidebar">
-          <section class="summary" aria-live="polite">
-            <h3>Resumen</h3>
-            <div class="summary-breakdown" id="breakdown-section">
-              <h4>Detalle de componentes</h4>
-              <div class="breakdown-group">
-                <h5>Setup</h5>
-                <ul id="breakdown-setup" class="breakdown-list"></ul>
-              </div>
-              <div class="breakdown-group">
-                <h5>Mensual</h5>
-                <ul id="breakdown-monthly" class="breakdown-list"></ul>
-              </div>
-            </div>
+        <div class="form-group">
+          <label for="pain-points">Puntos de Dolor Actuales (opcional)</label>
+          <textarea id="pain-points" rows="3"
+            placeholder="Ej: Tiempo de respuesta lento, inconsistencia en respuestas, sobrecarga del equipo"></textarea>
+        </div>
 
-            <div class="summary-metrics">
-              <div class="metric-row">
-                <div class="metric-title">Setup lista</div>
-                <div class="metric-value" id="setup-total">$0</div>
-                <div class="metric-note">Con margen: <span id="setup-margin">$0</span></div>
-              </div>
-              <div class="metric-row">
-                <div class="metric-title">Mensual lista</div>
-                <div class="metric-value" id="monthly-total">$0</div>
-                <div class="metric-note">Con margen: <span id="monthly-margin">$0</span></div>
-              </div>
-              <div class="metric-row">
-                <div class="metric-title">Horas</div>
-                <div class="metric-value" id="hours-total">0 h</div>
-              </div>
-            </div>
-            <div class="summary-breakdown summary-large">
-              <h4>Tarifas aplicadas</h4>
-              <ul id="hourly-list" class="hourly-list"></ul>
-            </div>
-          </section>
-        </aside>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" id="cancel-proposal">Cancelar</button>
+          <button type="submit" class="btn primary">✨ Generar Propuesta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: AI Proposal Result -->
+  <div id="proposal-result-modal" class="modal large" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Alcance del Proyecto</h3>
+        <button class="close-modal" id="close-result-modal">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="proposal-content" class="proposal-view">
+          <!-- Contenido generado -->
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn ghost" id="copy-proposal">📋 Copiar</button>
+        <button class="btn ghost" id="edit-proposal">✏️ Editar</button>
+        <button class="btn primary" id="regenerate-proposal">🔄 Regenerar</button>
       </div>
     </div>
+  </div>
 
-    <div id="proposal-preview" class="proposal-preview" aria-hidden="true"></div>
+  <!-- Modal: Save Quote to Cloud -->
+  <div id="save-quote-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>💾 Guardar Cotización</h3>
+        <button class="close-modal" id="close-save-modal">×</button>
+      </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+      <form id="save-quote-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="quote-client-name">Nombre del Cliente *</label>
+            <input type="text" id="quote-client-name" required placeholder="Ej: SANNA Clínicas, Acme Corp" />
+          </div>
+
+          <div class="form-group">
+            <label for="quote-tags">Tags (opcional)</label>
+            <input type="text" id="quote-tags" placeholder="Ej: urgente, salud, grande (separados por coma)" />
+            <small style="color: var(--muted); font-size: 0.85rem;">
+              Los tags ayudan a filtrar y organizar tus cotizaciones
+            </small>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" id="cancel-save">Cancelar</button>
+          <button type="submit" class="btn primary">💾 Guardar en la Nube</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="proposal-preview" style="position: fixed; left: -9999px; top: 0; opacity: 0;"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>
-

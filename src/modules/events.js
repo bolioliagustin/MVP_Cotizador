@@ -1,9 +1,11 @@
 import { refs, renderSessionPackages, renderSessionModelInfo, renderSessionPackageInfo, componentKey, hydrateForm, renderProposalSheet, getHourlyEntries, qs } from "./ui.js";
 import { toPng } from "html-to-image";
-import { catalog } from "../data/catalog.js";
-import { calculateTotals } from "../lib/calculator.js";
+import { saveAs } from "file-saver";
+import { catalog, messageCosts } from "../data/catalog.js";
+import { calculateTotals, analyzeHourlyRates } from "../lib/calculator.js";
 import { defaultState } from "../state/store.js";
 import { coerceNumberInput } from "../lib/utils.js";
+import { formatMoneyPrecise, formatMessageCost } from "../lib/format.js";
 import {
     addCustomIntegration,
     updateCustomIntegrationPreview,
@@ -11,7 +13,7 @@ import {
     handleCustomIntegrationClick,
     resetCustomIntegrationForm,
 } from "./custom-integrations.js";
-import { aiService } from "../services/ai.js";
+import { aiProposalService } from "../services/ai-proposal.js";
 
 export function bindEvents(store) {
     refs.implementation.addEventListener("change", (e) => store.setState({ implementation: e.target.value }));
@@ -24,259 +26,470 @@ export function bindEvents(store) {
     bindMultiSelect(refs.implExtras, "implementationExtras", store);
     bindMultiSelect(refs.addons, "addons", store);
 
-    refs.sessionModel.addEventListener("change", (e) => {
-        const sessionModel = e.target.value;
-        renderSessionPackages(sessionModel, "");
-        renderSessionModelInfo(sessionModel);
-        store.setState({ sessionModel, sessionPackage: "" });
-    });
+    if (refs.sessionPackage) {
+        refs.sessionPackage.addEventListener("change", (e) => store.setState({ sessionPackage: e.target.value }));
+    }
 
-    refs.sessionPackage.addEventListener("change", (e) => {
-        renderSessionPackageInfo(e.target.value);
-        store.setState({ sessionPackage: e.target.value });
-    });
+    if (refs.heyBiSelect) {
+        refs.heyBiSelect.addEventListener("change", (e) => store.setState({ heyBiPlan: e.target.value }));
+    }
 
-    refs.heyBiSelect.addEventListener("change", (e) => store.setState({ heyBiPlan: e.target.value }));
+    if (refs.setupMarginOverrideInput) {
+        refs.setupMarginOverrideInput.addEventListener("input", (e) => {
+            store.setState({ setupMarginOverride: coerceNumberInput(e.target.value) });
+        });
+    }
 
+    if (refs.monthlyMarginOverrideInput) {
+        refs.monthlyMarginOverrideInput.addEventListener("input", (e) => {
+            store.setState({ monthlyMarginOverride: coerceNumberInput(e.target.value) });
+        });
+    }
 
+    if (refs.sessionModel) {
+        refs.sessionModel.addEventListener("change", (e) => {
+            store.setState({ sessionModel: e.target.value });
+        });
+    }
 
-    if (refs.customIntegrationForm) {
-        refs.customIntegrationForm.addEventListener("submit", (event) => {
-            event.preventDefault();
+    if (refs.sessionQuantityInput) {
+        refs.sessionQuantityInput.addEventListener("input", (e) => {
+            const qty = parseInt(e.target.value, 10);
+            store.setState({ sessionQuantity: isNaN(qty) ? 0 : Math.max(0, qty) });
+        });
+    }
+
+    if (refs.customIntegrationList && refs.addCustomIntegrationBtn) {
+        refs.customIntegrationList.addEventListener("click", (e) => {
+            handleCustomIntegrationClick(e, store);
+        });
+        refs.customIntegrationList.addEventListener("input", (e) => {
+            handleCustomIntegrationInput(e, store);
+        });
+        refs.addCustomIntegrationBtn.addEventListener("click", () => {
             addCustomIntegration(store);
         });
-        refs.customIntegrationForm.addEventListener("input", updateCustomIntegrationPreview);
-        refs.customIntegrationForm.addEventListener("change", updateCustomIntegrationPreview);
-        updateCustomIntegrationPreview();
-        refs.customIntegrationForm.addEventListener("change", updateCustomIntegrationPreview);
-        updateCustomIntegrationPreview();
+    }
 
-        // Add AI Key configuration if not present
-        if (!document.getElementById("ai-config-btn")) {
-            const header = qs(".section-header");
-            if (header) {
-                const configBtn = document.createElement("button");
-                configBtn.id = "ai-config-btn";
-                configBtn.className = "btn-text";
-                configBtn.textContent = "⚙️ Configurar IA";
-                configBtn.style.marginLeft = "auto";
-                configBtn.onclick = () => {
-                    const current = aiService.getKey() || "";
-                    const key = prompt("Ingresa tu API Key de Google Gemini:", current);
-                    if (key !== null) {
-                        aiService.setKey(key);
-                        alert("API Key guardada.");
+    if (refs.companySelect) {
+        refs.companySelect.addEventListener("change", (e) => {
+            store.setState({ selectedCompany: e.target.value });
+        });
+    }
+
+    Object.entries(messageCosts).forEach(([platform, costs]) => {
+        Object.entries(costs).forEach(([region, cost]) => {
+            const inputId = `msg-cost-${platform}-${region}`;
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener("input", (e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value) && value >= 0) {
+                        store.setState((prevState) => ({
+                            messageCostOverrides: {
+                                ...prevState.messageCostOverrides,
+                                [`${platform}_${region}`]: value,
+                            },
+                        }));
                     }
-                };
-                header.appendChild(configBtn);
+                });
+            }
+        });
+    });
+
+    // Event delegation for breakdown card buttons
+    document.addEventListener("click", (e) => {
+        const target = e.target;
+        const action = target.dataset.action;
+
+        if (!action) return;
+
+        // Edit Price Button
+        if (action === "edit-price") {
+            const card = target.closest(".breakdown-card");
+            if (card) {
+                card.classList.add("editing");
+                const input = card.querySelector(".breakdown-price-input");
+                if (input) {
+                    input.focus();
+                    input.select();
+                }
             }
         }
-    }
-    if (refs.customIntegrationList) {
-        refs.customIntegrationList.addEventListener("input", (e) => handleCustomIntegrationInput(e, store));
-        refs.customIntegrationList.addEventListener("change", (e) => handleCustomIntegrationInput(e, store));
-        refs.customIntegrationList.addEventListener("click", (e) => handleCustomIntegrationClick(e, store));
-    }
-    if (refs.breakdownSection) {
 
-        refs.breakdownSection.addEventListener("click", (e) => {
-            const action = e.target.dataset.action;
-            if (action === "edit-price") {
-                handleEditPriceClick(e);
-            } else if (action === "save-price") {
-                handleSavePriceClick(e, store);
-            } else if (action === "cancel-edit") {
-                handleCancelEditClick(e);
-            } else if (action === "remove-component") {
-                handleBreakdownChange(e, store);
+        // Cancel Edit Button
+        if (action === "cancel-edit") {
+            const card = target.closest(".breakdown-card");
+            if (card) {
+                card.classList.remove("editing");
+                const input = card.querySelector(".breakdown-price-input");
+                if (input) {
+                    // Reset to current value (will be updated on next render)
+                    input.value = input.dataset.currentValue || "";
+                }
+            }
+        }
+
+        // Save Edit Button
+        if (action === "save-edit") {
+            const card = target.closest(".breakdown-card");
+            if (!card) return;
+
+            const input = card.querySelector(".breakdown-price-input");
+            if (!input) return;
+
+            const newValue = parseFloat(input.value);
+            console.log(newValue)
+            if (isNaN(newValue) || newValue < 0) {
+                alert("Por favor ingresa un valor válido");
+                return;
+            }
+
+            const componentType = input.dataset.componentType;
+            const componentId = input.dataset.componentId;
+            const category = input.dataset.category || "setup"; // Default to setup if not specified
+
+            if (componentType && componentId) {
+                console.log(componentType, componentId, category)
+                // Use same format as calculator.js: category:type:id
+                const overrideKey = `${category}:${componentType}:${componentId}`;
+                console.log('Override key:', overrideKey);
+                store.setState(prevState => ({
+                    moduleOverrides: {
+                        ...prevState.moduleOverrides,
+                        [overrideKey]: newValue
+                    }
+                }));
+            }
+
+            card.classList.remove("editing");
+        }
+
+        // Remove Component Button
+        if (action === "remove-component") {
+            const removeType = target.dataset.removeType;
+            const removeId = target.dataset.removeId;
+
+            if (removeType) {
+                // Remove from the actual state instead of hiding
+                const currentState = store.getState();
+
+                // Handle different component types
+                if (removeType === "addons" || removeType === "implementationExtras") {
+                    // For Sets, remove the item
+                    const currentSet = currentState[removeType];
+                    if (currentSet && currentSet.has(removeId)) {
+                        const newSet = new Set(currentSet);
+                        newSet.delete(removeId);
+                        store.setState({ [removeType]: newSet });
+                    }
+                } else if (removeType === "sessionPackage") {
+                    // For sessionPackage, clear it
+                    store.setState({ sessionPackage: "" });
+                } else if (removeType === "heyBiPlan") {
+                    // For heyBiPlan, clear it
+                    store.setState({ heyBiPlan: "" });
+                } else if (removeType === "implementation") {
+                    // For implementation, can't really "remove" - maybe clear it
+                    store.setState({ implementation: "" });
+                } else if (removeType === "integration") {
+                    // For integrations, clear it
+                    store.setState({ integrations: "" });
+                }
+            }
+        }
+    });
+
+    refs.resetBtn.addEventListener("click", () => store.setState(defaultState));
+
+    refs.importInput.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            handleImportJSON(data, store);
+            alert("✅ Configuración importada correctamente");
+            e.target.value = "";
+        } catch (error) {
+            alert("❌ Error al importar: " + error.message);
+            e.target.value = "";
+        }
+    });
+
+    refs.importBtn.addEventListener("click", () => {
+        refs.importInput.click();
+    });
+
+    // Export button now opens save modal for cloud save
+    refs.exportBtn.addEventListener("click", () => {
+        // Show save modal
+        if (refs.saveQuoteModal) {
+            refs.saveQuoteModal.style.display = "flex";
+        }
+    });
+
+    // Close save modal handlers
+    if (refs.closeSaveModal) {
+        refs.closeSaveModal.addEventListener("click", () => {
+            refs.saveQuoteModal.style.display = "none";
+        });
+    }
+
+    if (refs.cancelSave) {
+        refs.cancelSave.addEventListener("click", () => {
+            refs.saveQuoteModal.style.display = "none";
+        });
+    }
+
+    // Handle save quote form submission
+    if (refs.saveQuoteForm) {
+        refs.saveQuoteForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const submitBtn = refs.saveQuoteForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            try {
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = "⏳ Guardando...";
+
+                // Get form data
+                const clientName = refs.quoteClientName.value;
+                const tagsInput = refs.quoteTags.value;
+                const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
+
+                // Get current quote  data
+                const state = store.getState();
+                const totals = calculateTotals(state);
+
+                // Prepare quote data
+                const quoteData = {
+                    ...state,
+                    addons: Array.from(state.addons),
+                    customIntegrations: state.customIntegrations,
+                    implementationExtras: Array.from(state.implementationExtras),
+                };
+
+                // Import and use quotes service
+                const { quotesService } = await import('../services/quotes-service.js');
+                const result = await quotesService.saveQuote(clientName, quoteData, totals, tags);
+
+                if (result.success) {
+                    // Success!
+                    alert(`✅ Cotización guardada exitosamente para "${clientName}"`);
+
+                    // Close modal
+                    refs.saveQuoteModal.style.display = "none";
+
+                    // Reset form
+                    refs.saveQuoteForm.reset();
+                } else {
+                    throw new Error(result.error || "Error desconocido");
+                }
+            } catch (error) {
+                console.error("Error saving quote:", error);
+                alert(`❌ Error al guardar: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
     }
 
-    refs.resetBtn.addEventListener("click", () => {
-        store.setState({
-            ...defaultState,
-            addons: new Set(),
-            implementationExtras: new Set(),
-            customIntegrations: [],
-            disabledComponents: new Set(),
-        });
-        hydrateForm(store);
-    });
-
-    refs.exportBtn.addEventListener("click", () => {
-        const snapshot = {
-            ...store.getState(),
-            addons: Array.from(store.getState().addons),
-            implementationExtras: Array.from(store.getState().implementationExtras),
-            disabledComponents: Array.from(store.getState().disabledComponents),
-            totals: calculateTotals(store.getState()),
-            generatedAt: new Date().toISOString(),
-        };
-        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "cotizacion-heynow.json";
-        link.click();
-        URL.revokeObjectURL(url);
-    });
     refs.printBtn.addEventListener("click", () => handleExportImage(store));
+
+    // ============================================
+    // AI Proposal Generator Events
+    // ============================================
+
+    // Opening modal requires API key
+    if (refs.generateProposalBtn && refs.proposalModal) {
+        refs.generateProposalBtn.addEventListener("click", async () => {
+            // Check if API key exists
+            if (!aiProposalService.hasKey()) {
+                const key = prompt("Por favor ingresa tu API Key de Google Gemini:\n\n(Se guardará localmente para futuros usos)");
+                if (!key) return;
+                aiProposalService.setApiKey(key.trim());
+            }
+
+            // Show modal 
+            refs.proposalModal.style.display = "flex";
+        });
+
+        // Close modals
+        refs.closeProposalModal.addEventListener("click", () => {
+            refs.proposalModal.style.display = "none";
+        });
+
+        refs.cancelProposal.addEventListener("click", () => {
+            refs.proposalModal.style.display = "none";
+        });
+
+        refs.closeResultModal.addEventListener("click", () => {
+            refs.proposalResultModal.style.display = "none";
+        });
+
+        // Handle agent type selection to show/hide conditional fields
+        const agentTypeSelect = document.getElementById("agent-type");
+        const knowledgeSourcesGroup = document.getElementById("knowledge-sources-group");
+        const integrationSystemsGroup = document.getElementById("integration-systems-group");
+        const dataRequiredGroup = document.getElementById("data-required-group");
+
+        if (agentTypeSelect) {
+            agentTypeSelect.addEventListener("change", (e) => {
+                const type = e.target.value;
+
+                // Hide all conditional fields first
+                knowledgeSourcesGroup.style.display = "none";
+                integrationSystemsGroup.style.display = "none";
+                dataRequiredGroup.style.display = "none";
+
+                // Show relevant fields based on selection
+                if (type === "estatico" || type === "hibrido") {
+                    knowledgeSourcesGroup.style.display = "block";
+                }
+                if (type === "integracion" || type === "hibrido") {
+                    integrationSystemsGroup.style.display = "block";
+                    dataRequiredGroup.style.display = "block";
+                }
+            });
+        }
+
+        // Handle form submission
+        refs.proposalForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const submitBtn = refs.proposalForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+
+            try {
+                //Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = "⏳ Generando...";
+
+                // Collect form data
+                const clientContext = {
+                    clientName: document.getElementById("client-name").value,
+                    industry: document.getElementById("client-industry").value,
+                    objective: document.getElementById("client-objective").value,
+                    useCase: document.getElementById("use-case-description").value,
+                    agentType: document.getElementById("agent-type").value,
+                    knowledgeSources: document.getElementById("knowledge-sources").value,
+                    integrationSystems: document.getElementById("integration-systems").value,
+                    dataRequired: document.getElementById("data-required").value,
+                    volume: document.getElementById("expected-volume").value,
+                    painPoints: document.getElementById("pain-points").value
+                };
+
+                // Get current quote data
+                const quoterData = {
+                    state: store.getState(),
+                    totals: calculateTotals(store.getState())
+                };
+
+                // Generate proposal
+                const proposalText = await aiProposalService.generateProposal(quoterData, clientContext);
+
+                // Show result
+                showProposalResult(proposalText, clientContext, quoterData);
+
+                // Close form modal
+                refs.proposalModal.style.display = "none";
+
+                // Reset form
+                refs.proposalForm.reset();
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                console.error("Proposal generation error:", error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        // Copy proposal to clipboard
+        refs.copyProposal.addEventListener("click", async () => {
+            const content = refs.proposalContent.textContent;
+            try {
+                await navigator.clipboard.writeText(content);
+                const originalText = refs.copyProposal.textContent;
+                refs.copyProposal.textContent = "✅ Copiado";
+                setTimeout(() => {
+                    refs.copyProposal.textContent = originalText;
+                }, 2000);
+            } catch (error) {
+                alert("No se pudo copiar al portapapeles");
+            }
+        });
+
+        // Edit proposal (convert to editable)
+        refs.editProposal.addEventListener("click", () => {
+            const currentContent = refs.proposalContent.textContent;
+            refs.proposalContent.contentEditable = "true";
+            refs.proposalContent.style.border = "2px solid var(--primary)";
+            refs.proposalContent.focus();
+
+            // Change button to "Guardar"
+            refs.editProposal.textContent = "💾 Guardar";
+            refs.editProposal.onclick = () => {
+                refs.proposalContent.contentEditable = "false";
+                refs.proposalContent.style.border = "none";
+                refs.editProposal.textContent = "✏️ Editar";
+                refs.editProposal.onclick = null;
+            };
+        });
+
+        // Regenerate proposal
+        refs.regenerateProposal.addEventListener("click", () => {
+            refs.proposalResultModal.style.display = "none";
+            refs.proposalModal.style.display = "flex";
+        });
+    }
 }
 
-function bindMultiSelect(container, key, store) {
-    if (!container) return;
+/**
+ * Show proposal result in modal
+ */
+function showProposalResult(proposalText, clientContext, quoterData) {
+    // Format text with line breaks preserved
+    refs.proposalContent.innerHTML = proposalText
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold markdown
+
+    refs.proposalResultModal.style.display = "flex";
+}
+
+function bindMultiSelect(container, stateKey, store) {
     container.addEventListener("change", (e) => {
         if (!e.target.matches('input[type="checkbox"]')) return;
-        const next = new Set(store.getState()[key]);
-        if (e.target.checked) next.add(e.target.value);
-        else next.delete(e.target.value);
-        store.setState({ [key]: next });
-    });
-}
-
-function handleBreakdownChange(event, store) {
-    const target = event.target;
-    if (!target.matches('button[data-action="remove-component"]')) return;
-    const type = target.dataset.removeType;
-    const id = target.dataset.removeId ?? null;
-    removeComponent(type, id, store);
-}
-
-function removeComponent(type, id, store) {
-    if (!type) return;
-    const state = store.getState();
-
-    // 1. Manejo de Sets (Checkbox groups)
-    if (type === 'implementationExtras' || type === 'addons') {
-        if (!id) return;
-        const currentSet = new Set(state[type]);
-        currentSet.delete(id);
-        store.setState({ [type]: currentSet });
-        return;
-    }
-
-    // 2. Manejo de Integraciones Personalizadas (Array)
-    if (type === 'customIntegrations') {
-        if (!id) return;
-        const next = state.customIntegrations.filter(item => item.id !== id);
-        store.setState({ customIntegrations: next });
-        return;
-    }
-
-    // 3. Manejo de Selects únicos (Reseteo a string vacío)
-    const stateMap = {
-        'implementation': 'implementation',
-        'integration': 'integrations', // Singular type -> Plural state key
-        'sessionPackage': 'sessionPackage',
-        'heyBiPlan': 'heyBiPlan'
-    };
-
-    const stateKey = stateMap[type];
-    if (stateKey) {
-        store.setState({ [stateKey]: "" });
-
-        // Si removemos el modelo de sesión, también quitamos el paquete?
-        // El breakdown usa 'sessionPackage', así que solo quitamos el paquete.
-
-        // Si removemos la integración, tal vez querramos resetear el toggle de IA? 
-        // Por ahora solo reseteamos la selección principal.
-        return;
-    }
-
-    // Fallback por si hay algún otro tipo no manejado (para evitar errores)
-    const next = new Set(state.disabledComponents);
-    const key = componentKey(type, id);
-    next.add(key);
-    store.setState({ disabledComponents: next });
-}
-
-function handleEditPriceClick(event) {
-    const button = event.target;
-    const card = button.closest(".breakdown-card");
-    if (!card) return;
-
-    const display = card.querySelector(".breakdown-price-display");
-    const inputContainer = card.querySelector(".breakdown-price-input-container");
-    const input = inputContainer.querySelector(".breakdown-price-input");
-    const controls = card.querySelector(".breakdown-controls"); // Actions row
-
-    // Hide display, show input
-    if (display) display.style.display = "none";
-    if (controls) controls.style.display = "none"; // Hide edit/remove buttons while editing
-    if (inputContainer) inputContainer.style.display = "flex";
-
-    // Focus the input
-    setTimeout(() => input.focus(), 0);
-}
-
-function handleSavePriceClick(event, store) {
-    const button = event.target;
-    // Save button is INSIDE the input container, so closest is fine or we use card
-    const card = button.closest(".breakdown-card");
-    if (!card) return;
-
-    // The module key is on a container - let's put it on the input container or the card?
-    // Let's expect it on the input container or a dedicated wrapper. 
-    // In ui.js I will put data-module-key on the input-container or price-wrapper.
-    // Let's modify ui.js to put it on .breakdown-price-wrapper
-
-    const wrapper = card.querySelector(".breakdown-price-wrapper");
-    const moduleKey = wrapper.dataset.moduleKey;
-
-    const input = card.querySelector(".breakdown-price-input");
-    const rawValue = input.value.trim();
-
-    const moduleOverrides = { ...store.getState().moduleOverrides };
-
-    if (rawValue === '' || rawValue === null) {
-        // Reset to original value
-        delete moduleOverrides[moduleKey];
-    } else {
-        const numericValue = parseFloat(rawValue);
-        if (!isNaN(numericValue) && numericValue >= 0) {
-            moduleOverrides[moduleKey] = numericValue;
+        const val = e.target.value;
+        const currentSet = store.getState()[stateKey];
+        const newSet = new Set(currentSet);
+        if (e.target.checked) {
+            newSet.add(val);
         } else {
-            // Invalid input, don't save
-            handleCancelEditClick(event);
-            return;
+            newSet.delete(val);
         }
-    }
-
-    store.setState({ moduleOverrides });
-    // UI update happens via re-render, so we don't need to manually toggle display usually,
-    // but just in case of lag/opt:
-    handleCancelEditClick(event); // Reverts visibility state
-}
-
-function handleCancelEditClick(event) {
-    const button = event.target;
-    const card = button.closest(".breakdown-card");
-    if (!card) return;
-
-    const display = card.querySelector(".breakdown-price-display");
-    const inputContainer = card.querySelector(".breakdown-price-input-container");
-    const input = inputContainer.querySelector(".breakdown-price-input");
-    const controls = card.querySelector(".breakdown-controls");
-
-    // Reset input to current display value (cancel changes)
-    if (display) {
-        const displayAmount = display.querySelector(".breakdown-price-amount")?.textContent || "0";
-        const currentValue = displayAmount.replace(/[^0-9.-]/g, '');
-        if (input) input.value = currentValue;
-    }
-
-    // Hide input, show display
-    if (inputContainer) inputContainer.style.display = "none";
-    if (display) display.style.display = "flex";
-    if (controls) controls.style.display = "flex";
+        store.setState({ [stateKey]: newSet });
+    });
 }
 
 async function handleExportImage(store) {
     if (!refs.proposalPreview) return;
     const state = store.getState();
     const totals = calculateTotals(state);
-    const currentRate = catalog.rates.sinIa;
+
+    // Determinar la tarifa a usar en el resumen exportado
+    const rateAnalysis = analyzeHourlyRates(totals.breakdown);
+
+    // Usar tarifa personalizada si existe, sino usar promedio ponderado
+    const currentRate = state.customSummaryRate !== null && state.customSummaryRate !== undefined
+        ? state.customSummaryRate
+        : (rateAnalysis.weightedAverage > 0 ? rateAnalysis.weightedAverage : catalog.rates.sinIa);
+
     const hourlyEntries = getHourlyEntries(totals, false, state, false, currentRate);
 
     refs.proposalPreview.innerHTML = "";
@@ -285,17 +498,74 @@ async function handleExportImage(store) {
     refs.proposalPreview.style.display = "block";
 
     try {
-        const dataUrl = await toPng(sheet, { cacheBust: true, pixelRatio: 2 });
-        const link = document.createElement("a");
+        const dataUrl = await toPng(sheet, {
+            cacheBust: true,
+            pixelRatio: 3,
+            quality: 0.95,
+            skipFonts: true, // Evita error de CORS con Google Fonts
+            preferredFontFormat: 'woff2'
+        });
         const date = new Date().toISOString().split("T")[0];
-        link.download = `heynow-resumen-${date}.png`;
-        link.href = dataUrl;
-        link.click();
+        // Convertir data URL a blob
+        const byteString = atob(dataUrl.split(',')[1]);
+        const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: mimeString });
+        const filename = `heynow-cotizacion-${date}.png`;
+
+        // Try multiple approaches for maximum browser compatibility
+        try {
+            // Approach 1: FileSaver (best cross-browser)
+            saveAs(blob, filename);
+        } catch (e) {
+            // Approach 2: Manual link with explicit setAttribute
+            console.warn("FileSaver failed for image, using fallback", e);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.style.display = "none";
+            link.href = url;
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
     } catch (error) {
         console.error("No se pudo generar la imagen", error);
         alert("No pudimos generar la imagen. Intenta nuevamente.");
     } finally {
         refs.proposalPreview.style.display = "none";
         refs.proposalPreview.innerHTML = "";
+    }
+}
+
+function handleImportJSON(data, store) {
+    validateImportedData(data);
+    const restored = {
+        ...data,
+        addons: new Set(data.addons || []),
+        implementationExtras: new Set(data.implementationExtras || []),
+        customIntegrations: data.customIntegrations || [],
+    };
+    delete restored.totals;
+    delete restored.generatedAt;
+    store.setState(restored);
+}
+
+function validateImportedData(data) {
+    if (!data || typeof data !== "object") {
+        throw new Error("Formato de archivo inválido");
+    }
+    if (typeof data.implementation !== "string") {
+        throw new Error("Campo 'implementation' debe ser una cadena de texto");
+    }
+    if (typeof data.partner !== "string") {
+        throw new Error("Campo 'partner' debe ser una cadena de texto");
     }
 }
