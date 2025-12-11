@@ -24,6 +24,15 @@ class AIProposalService {
      */
     getKey() {
         if (!this.apiKey) {
+            // Try to load from environment variable first
+            const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+            if (envKey) {
+                this.apiKey = envKey;
+                this.initializeModel();
+                return this.apiKey;
+            }
+
+            // Fallback to localStorage
             this.apiKey = localStorage.getItem('gemini_api_key');
             if (this.apiKey) {
                 this.initializeModel();
@@ -45,6 +54,7 @@ class AIProposalService {
     initializeModel() {
         if (!this.apiKey) return;
         const genAI = new GoogleGenerativeAI(this.apiKey);
+        // Using gemini-1.5-flash (stable model with good performance)
         this.model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     }
 
@@ -54,12 +64,13 @@ class AIProposalService {
      * @param {Object} clientContext - Additional client context
      * @returns {Promise<string>} Generated proposal text
      */
-    async generateProposal(quoterData, clientContext) {
+    async generateProposal(quoterData, clientContext, retryCount = 0) {
         if (!this.hasKey()) {
             throw new Error("API Key de Google Gemini no configurada. Por favor configúrala primero.");
         }
 
         const prompt = this.buildPrompt(quoterData, clientContext);
+        const maxRetries = 2;
 
         try {
             const result = await this.model.generateContent(prompt);
@@ -67,10 +78,32 @@ class AIProposalService {
             return response.text();
         } catch (error) {
             console.error("Error generating proposal:", error);
+
+            // Check for specific error types
             if (error.message && error.message.includes('API_KEY_INVALID')) {
                 throw new Error("API Key inválida. Por favor verifica tu clave de Google Gemini.");
             }
-            throw new Error("No se pudo generar la propuesta. Intenta nuevamente.");
+
+            // Check for 503 Service Unavailable / Model Overloaded
+            if (error.message && (error.message.includes('503') || error.message.includes('overloaded'))) {
+                if (retryCount < maxRetries) {
+                    // Exponential backoff: wait 2^retryCount seconds
+                    const waitTime = Math.pow(2, retryCount) * 1000;
+                    console.log(`Model overloaded. Retrying in ${waitTime / 1000}s... (attempt ${retryCount + 1}/${maxRetries})`);
+
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return this.generateProposal(quoterData, clientContext, retryCount + 1);
+                } else {
+                    throw new Error("El modelo de Google AI está sobrecargado en este momento. Por favor intenta nuevamente en unos minutos.");
+                }
+            }
+
+            // Check for rate limiting
+            if (error.message && (error.message.includes('429') || error.message.includes('quota'))) {
+                throw new Error("Has excedido el límite de solicitudes. Por favor espera unos minutos antes de intentar nuevamente.");
+            }
+
+            throw new Error("No se pudo generar la propuesta. Error: " + (error.message || "Desconocido"));
         }
     }
 

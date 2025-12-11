@@ -14,6 +14,7 @@ import {
     resetCustomIntegrationForm,
 } from "./custom-integrations.js";
 import { aiProposalService } from "../services/ai-proposal.js";
+import { toast } from "../lib/toast.js";
 
 export function bindEvents(store) {
     refs.implementation.addEventListener("change", (e) => store.setState({ implementation: e.target.value }));
@@ -59,21 +60,59 @@ export function bindEvents(store) {
         });
     }
 
-    if (refs.customIntegrationList && refs.addCustomIntegrationBtn) {
+    if (refs.customIntegrationList) {
         refs.customIntegrationList.addEventListener("click", (e) => {
             handleCustomIntegrationClick(e, store);
         });
         refs.customIntegrationList.addEventListener("input", (e) => {
             handleCustomIntegrationInput(e, store);
         });
+    }
+
+    if (refs.addCustomIntegrationBtn) {
         refs.addCustomIntegrationBtn.addEventListener("click", () => {
             addCustomIntegration(store);
+        });
+    }
+
+    if (refs.customIntegrationForm) {
+        refs.customIntegrationForm.addEventListener("input", () => {
+            updateCustomIntegrationPreview();
         });
     }
 
     if (refs.companySelect) {
         refs.companySelect.addEventListener("change", (e) => {
             store.setState({ selectedCompany: e.target.value });
+        });
+    }
+
+    // Message region selector - show/hide costs table and update values
+    if (refs.messageRegion) {
+        refs.messageRegion.addEventListener("change", (e) => {
+            const regionId = e.target.value;
+            store.setState({ messageRegion: regionId });
+
+            // Show/hide table
+            if (refs.messageCostsTable) {
+                if (regionId) {
+                    refs.messageCostsTable.style.display = "block";
+
+                    // Update table values
+                    const region = messageCosts.find(r => r.id === regionId);
+                    if (region) {
+                        const marketingEl = document.getElementById("message-cost-marketing");
+                        const utilityEl = document.getElementById("message-cost-utility");
+                        const authEl = document.getElementById("message-cost-authentication");
+
+                        if (marketingEl) marketingEl.textContent = formatMessageCost(region.marketing);
+                        if (utilityEl) utilityEl.textContent = formatMessageCost(region.utility);
+                        if (authEl) authEl.textContent = formatMessageCost(region.authentication);
+                    }
+                } else {
+                    refs.messageCostsTable.style.display = "none";
+                }
+            }
         });
     }
 
@@ -141,7 +180,7 @@ export function bindEvents(store) {
             const newValue = parseFloat(input.value);
             console.log(newValue)
             if (isNaN(newValue) || newValue < 0) {
-                alert("Por favor ingresa un valor válido");
+                toast.warning("Por favor ingresa un valor válido");
                 return;
             }
 
@@ -190,10 +229,12 @@ export function bindEvents(store) {
                     // For heyBiPlan, clear it
                     store.setState({ heyBiPlan: "" });
                 } else if (removeType === "implementation") {
-                    // For implementation, can't really "remove" - maybe clear it
                     store.setState({ implementation: "" });
+                } else if (removeType === "customIntegrations") {
+                    const currentIntegrations = currentState.customIntegrations || [];
+                    const newIntegrations = currentIntegrations.filter(ci => ci.id !== removeId);
+                    store.setState({ customIntegrations: newIntegrations });
                 } else if (removeType === "integration") {
-                    // For integrations, clear it
                     store.setState({ integrations: "" });
                 }
             }
@@ -209,10 +250,10 @@ export function bindEvents(store) {
             const text = await file.text();
             const data = JSON.parse(text);
             handleImportJSON(data, store);
-            alert("✅ Configuración importada correctamente");
+            toast.success("Configuración importada correctamente");
             e.target.value = "";
         } catch (error) {
-            alert("❌ Error al importar: " + error.message);
+            toast.error("Error al importar: " + error.message);
             e.target.value = "";
         }
     });
@@ -278,7 +319,7 @@ export function bindEvents(store) {
 
                 if (result.success) {
                     // Success!
-                    alert(`✅ Cotización guardada exitosamente para "${clientName}"`);
+                    toast.success(`Cotización guardada exitosamente para "${clientName}"`);
 
                     // Close modal
                     refs.saveQuoteModal.style.display = "none";
@@ -290,7 +331,7 @@ export function bindEvents(store) {
                 }
             } catch (error) {
                 console.error("Error saving quote:", error);
-                alert(`❌ Error al guardar: ${error.message}`);
+                toast.error(`Error al guardar: ${error.message}`);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -298,7 +339,9 @@ export function bindEvents(store) {
         });
     }
 
-    refs.printBtn.addEventListener("click", () => handleExportImage(store));
+    if (refs.printBtn) {
+        refs.printBtn.addEventListener("click", () => handleExportImage(store));
+    }
 
     // ============================================
     // AI Proposal Generator Events
@@ -402,7 +445,7 @@ export function bindEvents(store) {
                 refs.proposalForm.reset();
 
             } catch (error) {
-                alert(`Error: ${error.message}`);
+                toast.error(`Error: ${error.message}`);
                 console.error("Proposal generation error:", error);
             } finally {
                 submitBtn.disabled = false;
@@ -421,7 +464,7 @@ export function bindEvents(store) {
                     refs.copyProposal.textContent = originalText;
                 }, 2000);
             } catch (error) {
-                alert("No se pudo copiar al portapapeles");
+                toast.error("No se pudo copiar al portapapeles");
             }
         });
 
@@ -538,7 +581,7 @@ async function handleExportImage(store) {
         }
     } catch (error) {
         console.error("No se pudo generar la imagen", error);
-        alert("No pudimos generar la imagen. Intenta nuevamente.");
+        toast.error("No pudimos generar la imagen. Intenta nuevamente.");
     } finally {
         refs.proposalPreview.style.display = "none";
         refs.proposalPreview.innerHTML = "";
