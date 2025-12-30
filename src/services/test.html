@@ -22,13 +22,12 @@
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // Reemplaza 'YOUR_API_KEY' con tu clave de API real
-        const API_KEY = 'AIzaSyAMbub24rjyKkmhv7KwvT-ywsgHEVnEAV8';
+        const API_KEY = "AIzaSyDUbHtTN84zvlKlRxdIRKMrzez_iSSe96w";
         const genAI = new GoogleGenerativeAI(API_KEY);
 
         document.getElementById('generateButton').addEventListener('click', async () => {
             const inputText = document.getElementById('inputText').value;
-            const model = genAI.getGenerativeModel({ model: "gemini-3-pro-preview" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
             const prompt = inputText;
 
             try {

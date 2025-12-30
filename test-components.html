@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test UI Components</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00d9ff;
+            margin-bottom: 10px;
+        }
+
+        .test-section {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .test-section h2 {
+            color: #00d9ff;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn.primary {
+            background: #00d9ff;
+            color: #000;
+        }
+
+        .btn.primary:hover {
+            background: #00b8d9;
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e5e5e5;
+        }
+
+        .btn.ghost:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .btn-icon:hover {
+            opacity: 1;
+        }
+
+        /* Flow/Outbound Cards */
+        .flow-card,
+        .outbound-card {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .flow-card-header,
+        .outbound-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .flow-card-header h5,
+        .outbound-card-header h5 {
+            font-size: 1.1rem;
+            color: #00d9ff;
+            margin: 0;
+        }
+
+        .flow-card-actions,
+        .outbound-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .flow-description {
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .flow-details,
+        .outbound-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .flow-detail-item,
+        .outbound-detail-item {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .flow-detail-item strong,
+        .outbound-detail-item strong {
+            color: #00d9ff;
+        }
+
+        /* Empty States */
+        .flow-empty-state,
+        .outbound-empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* Modals */
+        .flow-form-modal,
+        .outbound-form-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .flow-form-content,
+        .outbound-form-content {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .flow-form-header,
+        .outbound-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .flow-form-header h4,
+        .outbound-form-header h4 {
+            color: #00d9ff;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #999;
+            font-size: 32px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 4px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .flow-form-actions,
+        .outbound-form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .output {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #00ff88;
+        }
+
+        .info {
+            color: #00d9ff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Test: UI Components (Phase 2)</h1>
+        <p style="color: #999; margin-bottom: 30px;">
+            Prueba aislada de FlowManager y OutboundManager antes de integrarlos al modal avanzado.
+        </p>
+
+        <!-- FlowManager Test -->
+        <div class="test-section">
+            <h2>1️⃣ FlowManager Component</h2>
+            <p style="color: #999; margin-bottom: 20px;">Gestiona flujos del asistente con CRUD completo</p>
+            <div id="flows-container"></div>
+            <button class="btn primary" id="get-flows-btn" style="margin-top: 20px;">
+                📊 Ver Datos (JSON)
+            </button>
+        </div>
+
+        <!-- OutboundManager Test -->
+        <div class="test-section">
+            <h2>2️⃣ OutboundManager Component</h2>
+            <p style="color: #999; margin-bottom: 20px;">Gestiona flujos outbound con CRUD completo</p>
+            <div id="outbound-container"></div>
+            <button class="btn primary" id="get-outbound-btn" style="margin-top: 20px;">
+                📊 Ver Datos (JSON)
+            </button>
+        </div>
+
+        <!-- Output -->
+        <div class="test-section">
+            <h2>📄 Output</h2>
+            <div id="output" class="output">
+                <span class="info">Listo para probar los componentes...</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { FlowManager } from './src/ui/components/flow-manager.js';
+        import { OutboundManager } from './src/ui/components/outbound-manager.js';
+
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const className = type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<span class="${className}">${message}</span>\n`;
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+
+        // Initialize FlowManager
+        const flowManager = new FlowManager('flows-container', (flows) => {
+            log(`✅ Flujos actualizados: ${flows.length} flujos`, 'success');
+        });
+
+        // Initialize OutboundManager
+        const outboundManager = new OutboundManager('outbound-container', (outbound) => {
+            log(`✅ Outbound actualizado: ${outbound.length} flujos`, 'success');
+        });
+
+        // Pre-fill with sample data
+        flowManager.setFlows([
+            {
+                id: 'flow-1',
+                nombre: 'Consulta de disponibilidad',
+                descripcion: 'El usuario pregunta por horarios disponibles',
+                datosSolicitados: ['Fecha preferida', 'Servicio'],
+                fuenteInfo: 'API',
+                acciones: 'Consultar calendario y mostrar opciones disponibles',
+                derivacion: 'Ninguna',
+                sistemas: ['Sistema de Agendas']
+            }
+        ]);
+
+        outboundManager.setOutboundFlows([
+            {
+                id: 'outbound-1',
+                nombre: 'Recordatorio de cita',
+                trigger: 'Cita programada para mañana',
+                sistemaFuente: 'Sistema de Agendas',
+                canal: 'WhatsApp',
+                respuestaUsuario: 'Confirmar/Reagendar/Cancelar',
+                frecuencia: 'Diaria a las 10:00 AM'
+            }
+        ]);
+
+        log('✅ Componentes inicializados con datos de ejemplo', 'success');
+
+        // Get flows button
+        document.getElementById('get-flows-btn').addEventListener('click', () => {
+            clearOutput();
+            const flows = flowManager.getFlows();
+            log('=== FLUJOS DEL ASISTENTE ===\n', 'info');
+            log(JSON.stringify(flows, null, 2));
+            log(`\n✅ Total: ${flows.length} flujos`, 'success');
+
+            const validation = flowManager.validate();
+            log(`\nValidación: ${validation.valid ? '✅ Válido' : '❌ ' + validation.error}`, validation.valid ? 'success' : 'error');
+        });
+
+        // Get outbound button
+        document.getElementById('get-outbound-btn').addEventListener('click', () => {
+            clearOutput();
+            const outbound = outboundManager.getOutboundFlows();
+            log('=== FLUJOS OUTBOUND ===\n', 'info');
+            log(JSON.stringify(outbound, null, 2));
+            log(`\n✅ Total: ${outbound.length} flujos outbound`, 'success');
+        });
+    </script>
+</body>
+
+</html>

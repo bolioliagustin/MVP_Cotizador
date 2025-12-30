@@ -78,6 +78,12 @@ export function cacheRefs() {
     refs.quoteClientName = qs("#quote-client-name");
     refs.quoteTags = qs("#quote-tags");
 
+    // Advanced proposal modal
+    refs.proposalAdvancedModal = qs("#proposal-advanced-modal");
+    refs.proposalAdvancedForm = qs("#proposal-advanced-form");
+    refs.closeProposalAdvancedModal = qs("#close-proposal-advanced-modal");
+    refs.cancelAdvancedProposal = qs("#cancel-advanced-proposal");
+
     // Quotes history
     refs.quotesSearch = qs("#quotes-search");
     refs.quotesList = qs("#quotes-list");

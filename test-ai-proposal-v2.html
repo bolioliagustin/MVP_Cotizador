@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AI Proposal V2</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e5e5e5;
+        }
+
+        .container {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #00d9ff;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #999;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #00d9ff;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #00b8d9;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .output {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .error {
+            color: #ff4444;
+        }
+
+        .success {
+            color: #00ff88;
+        }
+
+        .info {
+            color: #00d9ff;
+        }
+
+        .section-title {
+            color: #00d9ff;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 Test: AI Proposal Service V2</h1>
+        <p class="description">
+            Prueba aislada del nuevo servicio de generación de propuestas con prompt maestro.
+            Este test NO afecta el sistema actual.
+        </p>
+
+        <div>
+            <button id="test-validation">1️⃣ Test Validación</button>
+            <button id="test-formatting">2️⃣ Test Formateo</button>
+            <button id="test-mapping">3️⃣ Test Mapeo Cotizador</button>
+            <button id="test-full" disabled>4️⃣ Test Generación Completa</button>
+        </div>
+
+        <div id="output" class="output">
+            Esperando test...
+        </div>
+    </div>
+
+    <script type="module">
+        import { aiProposalServiceV2 } from './src/services/ai-proposal-v2.js';
+
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<span class="${className}">${message}</span>\n`;
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+
+        // Mock data for testing
+        const mockValidData = {
+            general: {
+                cliente: 'SANNA Clínicas',
+                industria: 'Salud',
+                canales: ['WhatsApp', 'Webchat'],
+                objetivo: 'Automatizar atención al paciente y agendar citas médicas'
+            },
+            solution: {
+                tipoAgente: 'Híbrido (Base de Conocimiento + Integraciones)',
+                idiomas: ['Español'],
+                tono: 'profesional'
+            },
+            flujos: [
+                {
+                    id: 'flujo-1',
+                    nombre: 'Consulta de información médica',
+                    descripcion: 'El usuario consulta sobre servicios, especialidades, cobertura de seguros',
+                    datosSolicitados: [],
+                    fuenteInfo: 'Base de Conocimiento',
+                    acciones: 'Responder basándose en documentación cargada',
+                    derivacion: 'Panel humano si no encuentra respuesta',
+                    sistemas: []
+                },
+                {
+                    id: 'flujo-2',
+                    nombre: 'Agendamiento de citas',
+                    descripcion: 'El paciente solicita agendar una cita médica',
+                    datosSolicitados: ['DNI', 'Especialidad', 'Fecha preferida', 'Sucursal'],
+                    fuenteInfo: 'API',
+                    acciones: 'Consultar disponibilidad en sistema de agendas y confirmar cita',
+                    derivacion: 'Ninguna',
+                    sistemas: ['Sistema de Agendas SANNA', 'CRM']
+                }
+            ],
+            knowledgeBase: {
+                habilitado: true,
+                fuentes: ['PDF', 'Web', 'FAQ'],
+                volumen: '50 documentos sobre servicios, especialidades y procedimientos',
+                metodoCarga: 'Subida de documentos + Scraping web',
+                frecuenciaActualizacion: 'Mensual'
+            },
+            integraciones: [
+                {
+                    sistema: 'Sistema de Agendas SANNA',
+                    proposito: 'Consultar y crear citas médicas',
+                    tipo: 'REST API',
+                    responsable: 'Cliente'
+                },
+                {
+                    sistema: 'CRM Salesforce',
+                    proposito: 'Registrar interacciones con pacientes',
+                    tipo: 'REST API',
+                    responsable: 'Cliente'
+                }
+            ],
+            derivacion: {
+                habilitado: true,
+                momento: 'En cualquier momento o por detección del bot',
+                destino: 'Panel de atención',
+                habilidades: true,
+                niveles: 'Por sucursal (Lima, Arequipa, Cusco)'
+            },
+            outbound: [
+                {
+                    id: 'outbound-1',
+                    nombre: 'Recordatorio de cita',
+                    trigger: 'Cita agendada para el día siguiente',
+                    sistemaFuente: 'Sistema de Agendas',
+                    canal: 'WhatsApp',
+                    respuestaUsuario: 'Confirmar/Reagendar/Cancelar',
+                    frecuencia: 'Diaria a las 10:00 AM'
+                }
+            ],
+            restricciones: [
+                'No incluye pasarela de pagos',
+                'Requiere documentación técnica de APIs por parte del cliente',
+                'Cobertura de seguros debe ser provista en formato estructurado'
+            ]
+        };
+
+        const mockInvalidData = {
+            general: {
+                // Missing required fields
+                industria: 'Salud'
+            },
+            solution: {},
+            flujos: [] // No flows
+        };
+
+        const mockQuoterData = {
+            state: {
+                implementation: 'hey2',
+                addons: new Set(['voice-to-text', 'appointment-scheduler']),
+                integrations: 'crm-salesforce',
+                customIntegrations: [
+                    { id: 'custom-1', name: 'API de Inventario', hours: 20 }
+                ]
+            },
+            totals: {
+                setupMargin: 5000,
+                monthlyMargin: 500
+            }
+        };
+
+        // Test 1: Validation
+        document.getElementById('test-validation').addEventListener('click', () => {
+            clearOutput();
+            log('=== TEST 1: VALIDACIÓN DE DATOS ===\n', 'info');
+
+            log('✅ Probando datos válidos...', 'info');
+            const validResult = aiProposalServiceV2.validateAdvancedData(mockValidData);
+            if (validResult.valid) {
+                log('✓ Validación exitosa\n', 'success');
+            } else {
+                log(`✗ Error inesperado: ${validResult.errors.join(', ')}\n`, 'error');
+            }
+
+            log('❌ Probando datos inválidos...', 'info');
+            const invalidResult = aiProposalServiceV2.validateAdvancedData(mockInvalidData);
+            if (!invalidResult.valid) {
+                log('✓ Errores detectados correctamente:', 'success');
+                invalidResult.errors.forEach(err => log(`  - ${err}`, 'error'));
+            } else {
+                log('✗ Debería haber detectado errores\n', 'error');
+            }
+
+            log('\n✅ TEST 1 COMPLETADO', 'success');
+        });
+
+        // Test 2: Formatting
+        document.getElementById('test-formatting').addEventListener('click', () => {
+            clearOutput();
+            log('=== TEST 2: FORMATEO DE SECCIONES ===\n', 'info');
+
+            log('--- Contexto General ---', 'section-title');
+            const context = aiProposalServiceV2.formatGeneralContext(mockValidData.general, mockValidData.solution);
+            log(context);
+
+            log('\n--- Flujos ---', 'section-title');
+            const flujos = aiProposalServiceV2.formatFlujosSection(mockValidData.flujos);
+            log(flujos);
+
+            log('\n--- Base de Conocimiento ---', 'section-title');
+            const kb = aiProposalServiceV2.formatKnowledgeBaseSection(mockValidData.knowledgeBase);
+            log(kb);
+
+            log('\n--- Integraciones ---', 'section-title');
+            const integ = aiProposalServiceV2.formatIntegracionesSection(mockValidData.integraciones);
+            log(integ);
+
+            log('\n--- Derivación ---', 'section-title');
+            const deriv = aiProposalServiceV2.formatDerivacionSection(mockValidData.derivacion);
+            log(deriv);
+
+            log('\n--- Outbound ---', 'section-title');
+            const outb = aiProposalServiceV2.formatOutboundSection(mockValidData.outbound);
+            log(outb);
+
+            log('\n✅ TEST 2 COMPLETADO', 'success');
+        });
+
+        // Test 3: Quoter Mapping
+        document.getElementById('test-mapping').addEventListener('click', () => {
+            clearOutput();
+            log('=== TEST 3: MAPEO DESDE COTIZADOR ===\n', 'info');
+
+            const mapped = aiProposalServiceV2.mapQuoterToAdvancedData(mockQuoterData);
+
+            log('📊 Datos mapeados:', 'info');
+            log(JSON.stringify(mapped, null, 2));
+
+            log('\n✓ Integraciones mapeadas:', 'success');
+            log(`  - ${mapped.integraciones.length} integraciones detectadas`);
+
+            log('\n✓ Flujos sugeridos:', 'success');
+            log(`  - ${mapped.flujos.length} flujos basados en addons`);
+
+            log('\n✅ TEST 3 COMPLETADO', 'success');
+        });
+
+        // Test 4: Full Generation (requires API key)
+        document.getElementById('test-full').addEventListener('click', async () => {
+            clearOutput();
+            log('=== TEST 4: GENERACIÓN COMPLETA ===\n', 'info');
+
+            if (!aiProposalServiceV2.hasKey()) {
+                log('❌ No hay API key configurada', 'error');
+                log('Para probar generación completa, configura la API key en el sistema principal', 'info');
+                return;
+            }
+
+            log('⏳ Generando propuesta...', 'info');
+
+            try {
+                const proposal = await aiProposalServiceV2.generateAdvancedProposal(mockValidData);
+                log('\n✅ PROPUESTA GENERADA:\n', 'success');
+                log('─'.repeat(80), 'info');
+                log(proposal);
+                log('─'.repeat(80), 'info');
+            } catch (error) {
+                log(`\n❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Enable full test if API key exists
+        if (aiProposalServiceV2.hasKey()) {
+            document.getElementById('test-full').disabled = false;
+            log('ℹ️ API Key detectada - Test de generación completa disponible', 'success');
+        } else {
+            log('ℹ️ No hay API Key - Solo tests de validación y formateo disponibles', 'info');
+        }
+    </script>
+</body>
+
+</html>

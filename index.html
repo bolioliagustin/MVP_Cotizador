@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- Markdown parser for proposal display -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/lib/marked.umd.min.js"></script>
 </head>
 
 <body>
@@ -486,6 +488,124 @@
         <div class="modal-actions">
           <button type="button" class="btn ghost" id="cancel-save">Cancelar</button>
           <button type="submit" class="btn primary">💾 Guardar en la Nube</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: AI Proposal Generator (Advanced Mode) -->
+  <div id="proposal-advanced-modal" class="modal xlarge" style="display: none;">
+    <div class="modal-content modal-scrollable">
+      <div class="modal-header">
+        <h3>✨ Generar Propuesta</h3>
+        <button class="close-modal" id="close-proposal-advanced-modal">×</button>
+      </div>
+
+      <form id="proposal-advanced-form">
+        <div class="modal-body">
+
+          <!-- Sección 1: Datos Generales -->
+          <div class="form-section">
+            <h4>📋 Datos Generales</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="adv-client-name">Cliente/Empresa *</label>
+                <input type="text" id="adv-client-name" required placeholder="Ej: SANNA Clínicas" />
+              </div>
+              <div class="form-group">
+                <label for="adv-industry">Industria/Sector *</label>
+                <select id="adv-industry" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="Salud">Salud</option>
+                  <option value="Retail/Comercio">Retail/Comercio</option>
+                  <option value="Finanzas">Finanzas</option>
+                  <option value="Educación">Educación</option>
+                  <option value="Tecnología">Tecnología</option>
+                  <option value="Manufactura">Manufactura</option>
+                  <option value="Servicios">Servicios</option>
+                  <option value="Gobierno">Gobierno</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="adv-channels">Canales *</label>
+              <input type="text" id="adv-channels" required
+                placeholder="Ej: WhatsApp, Webchat, Email (separados por coma)" value="WhatsApp" />
+              <small>Separar con comas</small>
+            </div>
+            <div class="form-group">
+              <label for="adv-objective">Objetivo Principal *</label>
+              <textarea id="adv-objective" rows="2" required
+                placeholder="Ej: Automatizar atención al cliente y reducir carga del equipo de soporte"></textarea>
+            </div>
+          </div>
+
+          <!-- Sección 2: Tipo de Solución -->
+          <div class="form-section">
+            <h4>🤖 Tipo de Solución</h4>
+            <div class="form-group">
+              <label for="adv-agent-type">Tipo de Agente *</label>
+              <select id="adv-agent-type" required>
+                <option value="">Seleccionar...</option>
+                <option value="Agente con integraciones">Agente con integraciones</option>
+                <option value="Agente con Base de conocimiento">Agente con Base de conocimiento</option>
+                <option value="Ambos">Ambos (Integraciones + KB)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sección 3: Flujos del Asistente -->
+          <div class="form-section">
+            <h4>🔄 Flujos del Asistente</h4>
+            <p class="section-help">Define los flujos principales que el asistente manejará. Mínimo 1 requerido.</p>
+            <div id="adv-flows-container"></div>
+          </div>
+
+          <!-- Sección 4: Derivación a Humano -->
+          <div class="form-section">
+            <h4>👤 Derivación a Atención Humana</h4>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="adv-escalation-enabled" />
+                <span>Habilitar Derivación Humana</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Sección 7: Flujos Outbound -->
+          <div class="form-section">
+            <h4>📤 Flujos de Servicio (Outbound)</h4>
+            <p class="section-help">Mensajes automáticos salientes (opcional).</p>
+            <div id="adv-outbound-container"></div>
+          </div>
+
+          <!-- Sección 8: Restricciones y Exclusiones -->
+          <div class="form-section">
+            <h4>⚠️ Restricciones y Exclusiones</h4>
+            <p class="section-help">Opcional. Agrega aclaraciones sobre lo que NO incluye el proyecto.</p>
+            <div id="adv-restrictions-list">
+              <!-- Restrictions will be added dynamically -->
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="flex: 1;">
+                <input type="text" id="adv-restriction-input" placeholder="Ej: No incluye pasarela de pagos" />
+              </div>
+              <button type="button" class="btn ghost" id="adv-add-restriction-btn">➕ Agregar</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" id="cancel-advanced-proposal">Cancelar</button>
+          <button type="submit" class="btn primary" id="submit-advanced-proposal">
+            <span class="btn-text">✨ Generar Propuesta Avanzada</span>
+            <span class="btn-spinner" style="display: none;">
+              <span class="spinner"></span>
+              Generando...
+            </span>
+          </button>
         </div>
       </form>
     </div>

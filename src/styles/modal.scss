@@ -115,6 +115,9 @@
     font-weight: 500;
     color: var(--text);
     font-size: 0.95rem;
+    min-height: 1.2em;
+    /* Ensure consistent label height */
+    line-height: 1.2;
 }
 
 #proposal-modal .form-group input,
@@ -229,4 +232,317 @@
     .modal-actions button {
         width: 100%;
     }
+}
+
+/* ============================================ */
+/* Advanced Modal Styles */
+/* ============================================ */
+
+/* XLarge modal for advanced mode */
+.modal.xlarge .modal-content {
+    max-width: 1000px;
+    max-height: 95vh;
+}
+
+.modal-scrollable {
+    overflow-y: auto;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h4 {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    color: var(--primary);
+}
+
+.section-help {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+/* Form Rows for side-by-side fields */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: start;
+    /* Align items to top to prevent misalignment */
+}
+
+.form-row .form-group {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    /* Override .form-group + .form-group margin */
+}
+
+/* Checkbox Labels */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.checkbox-label span {
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Component Cards (from FlowManager and OutboundManager) */
+.flow-card,
+.outbound-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+
+.flow-card:hover,
+.outbound-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.flow-card-header,
+.outbound-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.flow-card-header h5,
+.outbound-card-header h5 {
+    font-size: 1.1rem;
+    color: var(--primary);
+    margin: 0;
+}
+
+.flow-card-actions,
+.outbound-card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    color: var(--text);
+}
+
+.btn-icon:hover {
+    opacity: 1;
+}
+
+.flow-description,
+.outbound-description {
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.flow-details,
+.outbound-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.flow-detail-item,
+.outbound-detail-item {
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.4;
+}
+
+.flow-detail-item strong,
+.outbound-detail-item strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Empty States */
+.flow-empty-state,
+.outbound-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+}
+
+/* Flow/Outbound Form Modals (nested modals) */
+.flow-form-modal,
+.outbound-form-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    /* Higher than main modal */
+}
+
+.flow-form-content,
+.outbound-form-content {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+}
+
+.flow-form-header,
+.outbound-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.flow-form-header h4,
+.outbound-form-header h4 {
+    color: var(--primary);
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.flow-form-actions,
+.outbound-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.flow-add-btn,
+.outbound-add-btn {
+    margin-top: 16px;
+}
+
+/* Integrations List */
+#adv-integrations-list {
+    margin-bottom: 16px;
+}
+
+.integration-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.integration-item strong {
+    color: var(--primary);
+}
+
+/* Restrictions List */
+#adv-restrictions-list {
+    margin-bottom: 16px;
+}
+
+.restriction-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.restriction-item-text {
+    flex: 1;
+    color: var(--text);
+}
+
+.remove-restriction {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 8px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.remove-restriction:hover {
+    opacity: 1;
+    color: #ff4444;
+}
+
+/* Spinner Animation for Loading States */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-spinner {
+    display: none;
+    align-items: center;
+}
+
+.btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn.loading .btn-text {
+    display: none !important;
+}
+
+.btn.loading .btn-spinner {
+    display: inline-flex !important;
 }

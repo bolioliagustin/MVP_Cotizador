@@ -14,9 +14,13 @@ import {
     resetCustomIntegrationForm,
 } from "./custom-integrations.js";
 import { aiProposalService } from "../services/ai-proposal.js";
+import { initAdvancedProposalModal, openAdvancedModal } from "./advanced-proposal-handler.js";
 import { toast } from "../lib/toast.js";
 
 export function bindEvents(store) {
+    // Initialize advanced proposal modal
+    initAdvancedProposalModal(refs, store);
+
     refs.implementation.addEventListener("change", (e) => store.setState({ implementation: e.target.value }));
     refs.integrations.addEventListener("change", (e) => store.setState({ integrations: e.target.value }));
     refs.integrationRateToggle.addEventListener("change", (e) =>
@@ -345,20 +349,23 @@ export function bindEvents(store) {
 
     // ============================================
     // AI Proposal Generator Events
-    // ============================================
-
-    // Opening modal requires API key
+    // ======== AI Proposal Generator ========
+    // Modified button to support both simple and advanced modes
     if (refs.generateProposalBtn && refs.proposalModal) {
         refs.generateProposalBtn.addEventListener("click", async () => {
-            // Check if API key exists
+            // Check if API key exists first
             if (!aiProposalService.hasKey()) {
-                const key = prompt("Por favor ingresa tu API Key de Google Gemini:\n\n(Se guardará localmente para futuros usos)");
+                const key = prompt("Por favor ingresa tu API Key de OpenRouter:\n\n(Se guardará localmente para futuros usos)\n\nConsigue tu key en: https://openrouter.ai/keys");
                 if (!key) return;
                 aiProposalService.setApiKey(key.trim());
             }
 
-            // Show modal 
-            refs.proposalModal.style.display = "flex";
+            // Open advanced modal directly (default mode)
+            const quoterData = {
+                state: store.getState(),
+                totals: calculateTotals(store.getState())
+            };
+            openAdvancedModal(quoterData);
         });
 
         // Close modals
