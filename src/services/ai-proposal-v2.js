@@ -12,28 +12,14 @@ class AIProposalServiceV2 {
         this.model = 'google/gemini-3-pro-preview'; // Default model
     }
 
-    /**
-     * Set and persist API key
-     */
-    setApiKey(key) {
-        this.apiKey = key;
-        localStorage.setItem('openrouter_api_key', key);
-    }
+
 
     /**
-     * Get stored API key
+     * Get API key from environment variable
      */
     getKey() {
         if (!this.apiKey) {
-            // Try environment variable first
-            const envKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-            if (envKey) {
-                this.apiKey = envKey;
-                return this.apiKey;
-            }
-
-            // Fallback to localStorage
-            this.apiKey = localStorage.getItem('openrouter_api_key');
+            this.apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
         }
         return this.apiKey;
     }

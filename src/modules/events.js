@@ -353,13 +353,6 @@ export function bindEvents(store) {
     // Modified button to support both simple and advanced modes
     if (refs.generateProposalBtn && refs.proposalModal) {
         refs.generateProposalBtn.addEventListener("click", async () => {
-            // Check if API key exists first
-            if (!aiProposalService.hasKey()) {
-                const key = prompt("Por favor ingresa tu API Key de OpenRouter:\n\n(Se guardará localmente para futuros usos)\n\nConsigue tu key en: https://openrouter.ai/keys");
-                if (!key) return;
-                aiProposalService.setApiKey(key.trim());
-            }
-
             // Open advanced modal directly (default mode)
             const quoterData = {
                 state: store.getState(),
